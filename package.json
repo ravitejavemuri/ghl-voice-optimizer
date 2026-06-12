@@ -1,5 +1,5 @@
 {
-  "name": "ghl-voice-optimizer",
+  "name": "voice-ai-optimizer",
   "version": "1.0.0",
   "private": true,
   "description": "Voice AI Agent Optimizer — local dev (Node + Vue)",

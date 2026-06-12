@@ -611,7 +611,7 @@ onMounted(async () => {
                 <span class="font-bold text-blue-600">3.</span> Test cases from patterns
               </li>
               <li class="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                <span class="font-bold text-blue-600">4.</span> Evaluation — fixes for GHL
+                <span class="font-bold text-blue-600">4.</span> Evaluation — recommended fixes
               </li>
             </ol>
           </div>
@@ -996,7 +996,7 @@ onMounted(async () => {
               <p class="mt-1 text-sm text-slate-500">
                 Derived from recurring failures across
                 {{ state.patterns?.executiveSummary?.calls_analyzed ?? state.analyses.length }} analyzed call(s).
-                Validate each on your GHL Voice AI agent after applying fixes.
+                Validate each on your live voice agent after applying fixes.
               </p>
             </div>
             <div
@@ -1027,17 +1027,17 @@ onMounted(async () => {
             v-if="!state.recommendations"
             class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400 shadow-sm"
           >
-            Run Analyze to generate optimization recommendations and a GHL validation plan.
+            Run Analyze to generate optimization recommendations and a validation plan.
           </div>
           <template v-else>
             <div class="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 shadow-sm">
-              <h2 class="text-base font-semibold text-slate-900">Validate in GHL Voice AI</h2>
+              <h2 class="text-base font-semibold text-slate-900">Validate on your voice agent</h2>
               <p class="mt-2 text-sm text-slate-600">
-                Apply the optimized prompt below in your GHL agent, then call the agent for each test scenario on the
+                Apply the optimized prompt below in your voice agent, then call the agent for each test scenario on the
                 <strong>Test Cases</strong> tab. Re-upload new call transcripts here to measure improvement.
               </p>
               <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm text-slate-700">
-                <li>Copy the optimized prompt into your GHL Voice AI agent settings.</li>
+                <li>Copy the optimized prompt into your voice agent settings.</li>
                 <li>Save and publish the updated agent configuration.</li>
                 <li>Call your agent's phone number — role-play each scenario from the Test Cases tab.</li>
                 <li>Check success criteria during the live call (see Test Cases tab).</li>
@@ -1061,7 +1061,7 @@ onMounted(async () => {
             >
               <h3 class="mb-2 text-sm font-semibold text-slate-700">Live voice test checklist</h3>
               <p class="mb-4 text-sm text-slate-500">
-                {{ state.testCases.testCases.length }} scenario(s) to run against your GHL agent after applying changes.
+                {{ state.testCases.testCases.length }} scenario(s) to run against your voice agent after applying changes.
               </p>
               <div class="space-y-3">
                 <div
@@ -1136,7 +1136,7 @@ onMounted(async () => {
       </main>
 
       <footer class="mt-10 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
-        <span v-if="embedLocationId">Running in GHL · location {{ embedLocationId }}</span>
+        <span v-if="embedLocationId">Embedded · location {{ embedLocationId }}</span>
         <span v-else>Local dev mode</span>
         · Agent: {{ agent?.model }} @ temp {{ agent?.temperature }}
       </footer>

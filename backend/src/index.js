@@ -51,7 +51,7 @@ app.use(
 );
 app.use(express.json());
 
-// Allow embedding inside GHL Custom Menu iframe
+// Allow embedding inside platform Custom Menu iframe
 app.use((_req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',

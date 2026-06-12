@@ -147,7 +147,7 @@ export async function runFullPipeline(provider, agentConfig, transcripts) {
     setPipelineProgress({
       running: false,
       step: 'done',
-      detail: 'Pipeline complete — validate changes in GHL Voice AI',
+      detail: 'Pipeline complete — validate changes on your live voice agent',
       percent: 100,
     });
 

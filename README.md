@@ -199,10 +199,10 @@ Every push to **`main`** triggers a new deploy (`autoDeployTrigger: commit`).
 
 Verify: `https://<your-service>.onrender.com/api/health`
 
-### 3. GHL Custom Menu URL
+### 3. Custom Menu embed URL
 
 ```
-https://<your-service>.onrender.com/?locationId={{location.id}}
+https://voice-ai-optimizer.onrender.com/?locationId={{location.id}}
 ```
 
 See **[MARKETPLACE.md](MARKETPLACE.md)** for the full listing checklist.

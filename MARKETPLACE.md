@@ -133,7 +133,7 @@ In **Build → Modules → Custom Menu**, add a menu item:
 | Field | Value |
 |-------|--------|
 | **Name** | Voice AI Optimizer |
-| **URL** | `https://your-domain.com/?locationId={{location.id}}` |
+| **URL** | `https://voice-ai-optimizer.onrender.com/?locationId={{location.id}}` |
 
 GHL opens your app in an iframe. The `locationId` query param is passed for context (shown in the footer); the app does not use it for API calls.
 
@@ -177,7 +177,7 @@ Before going **Public**, complete **Build → Profile**:
 1. Install your **Private** app on a GHL sandbox sub-account
 2. Open the Custom Menu item — app should load in iframe
 3. Upload transcripts → Analyze → verify all tabs work
-4. Confirm footer shows `Running in GHL · location …`
+4. Confirm footer shows `Embedded · location …`
 5. Copy optimized prompt manually (no API write-back)
 
 ---
