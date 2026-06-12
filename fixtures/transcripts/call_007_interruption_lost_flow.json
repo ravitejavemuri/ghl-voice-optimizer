@@ -1,0 +1,31 @@
+{
+  "callId": "call_007",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": null,
+  "startedAt": "2026-05-30T13:02:57Z",
+  "endedAt": "2026-05-30T13:06:44Z",
+  "durationSeconds": 227,
+  "outcome": "abandoned",
+  "callerPhone": "+13035550107",
+  "summary": "Caller interrupted with pricing questions; agent never returned to qualification or booking flow.",
+  "tags": ["interruption", "lost_flow"],
+  "toolsUsed": [],
+  "expectedIssues": ["lost_flow_after_interruption"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Hi, this is Alex with Summit Home Services. I can help schedule a free HVAC inspection.", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "Before that—how much do repairs usually cost if you find something?", "timestampOffsetSec": 6, "interrupted": true },
+    { "turnIndex": 2, "speaker": "agent", "text": "Repairs vary widely depending on parts and system age.", "timestampOffsetSec": 10 },
+    { "turnIndex": 3, "speaker": "caller", "text": "Sorry, one sec—", "timestampOffsetSec": 16, "interrupted": true },
+    { "turnIndex": 4, "speaker": "agent", "text": "No problem.", "timestampOffsetSec": 18 },
+    { "turnIndex": 5, "speaker": "caller", "text": "Okay I'm back. Also do you work on weekends?", "timestampOffsetSec": 28 },
+    { "turnIndex": 6, "speaker": "agent", "text": "Saturday appointments are limited but sometimes available.", "timestampOffsetSec": 34 },
+    { "turnIndex": 7, "speaker": "caller", "text": "Cool. So can we book?", "timestampOffsetSec": 42 },
+    { "turnIndex": 8, "speaker": "agent", "text": "Sure. What were you asking about again?", "timestampOffsetSec": 46 },
+    { "turnIndex": 9, "speaker": "caller", "text": "Booking the inspection.", "timestampOffsetSec": 52 },
+    { "turnIndex": 10, "speaker": "agent", "text": "Right. Let me check something.", "timestampOffsetSec": 56 },
+    { "turnIndex": 11, "speaker": "caller", "text": "You didn't ask if I'm a homeowner or get my address.", "timestampOffsetSec": 72 },
+    { "turnIndex": 12, "speaker": "agent", "text": "Oh. Um. Can you hold?", "timestampOffsetSec": 78 },
+    { "turnIndex": 13, "speaker": "caller", "text": "I'll just call back later.", "timestampOffsetSec": 84 }
+  ]
+}

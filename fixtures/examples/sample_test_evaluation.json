@@ -1,0 +1,50 @@
+{
+  "agentId": "agent_summit_hvac_001",
+  "evaluatedAt": "2026-06-02T10:30:00Z",
+  "configSnapshot": {
+    "model": "gpt-4o-mini",
+    "temperature": 0.7
+  },
+  "results": [
+    {
+      "testId": "tc_happy_homeowner_booking",
+      "passed": true,
+      "overallScore": 92,
+      "criteriaResults": [
+        { "criterionId": "sc_qualify", "passed": true, "evidence": "Agent confirmed homeowner and Aurora service area." },
+        { "criterionId": "sc_contact", "passed": true, "evidence": "Collected name, phone, email, and full address." },
+        { "criterionId": "sc_book", "passed": true, "evidence": "Confirmed Thursday 10 AM appointment." },
+        { "criterionId": "sc_recap", "passed": true, "evidence": "Recapped date, time, address, and confirmation channels." },
+        { "criterionId": "sc_tone", "passed": true, "evidence": "Warm, professional tone throughout." }
+      ]
+    },
+    {
+      "testId": "tc_spouse_objection",
+      "passed": false,
+      "overallScore": 28,
+      "criteriaResults": [
+        { "criterionId": "sc_ack", "passed": false, "evidence": "Agent pushed immediate booking: 'Let's just book now.'" },
+        { "criterionId": "sc_value", "passed": false, "evidence": "Did not restate free/no-obligation value." },
+        { "criterionId": "sc_callback", "passed": false, "evidence": "create_callback_task not offered." },
+        { "criterionId": "sc_no_pressure", "passed": false, "evidence": "Used scarcity: 'Slots fill up fast.'" },
+        { "criterionId": "sc_close", "passed": false, "evidence": "Ended abruptly with 'Okay, bye.'" }
+      ]
+    },
+    {
+      "testId": "tc_angry_escalation",
+      "passed": false,
+      "overallScore": 12,
+      "criteriaResults": [
+        { "criterionId": "sc_empathy", "passed": false, "evidence": "Responded with booking push instead of acknowledgment." },
+        { "criterionId": "sc_escalate", "passed": false, "evidence": "transfer_to_human not offered after manager request." },
+        { "criterionId": "sc_no_force_book", "passed": false, "evidence": "Asked for address to schedule while caller was upset." }
+      ]
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "passed": 1,
+    "failed": 2,
+    "passRate": 0.33
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "agentId": "agent_summit_hvac_001",
+  "generatedAt": "2026-06-02T11:00:00Z",
+  "recommendations": [
+    {
+      "id": "rec_prompt_objection_branch",
+      "category": "prompt",
+      "priority": "high",
+      "before": "OBJECTION HANDLING\n- If the caller needs time to think, acknowledge their concern, restate the free/no-obligation value, and offer to hold a tentative slot or schedule a callback.",
+      "after": "OBJECTION HANDLING\n- If the caller needs time to think or must consult someone else:\n  1. Acknowledge without pressure.\n  2. Restate the inspection is free with no obligation.\n  3. Offer create_callback_task OR a tentative hold.\n  4. Never use scarcity or urgency language.\n- Example: \"No problem at all. I can have a specialist call you back tomorrow, or hold a tentative slot you can confirm later. Which would you prefer?\"",
+      "reasoning": "call_003 failed because the agent used scarcity pressure. A explicit branch with example language and a ban on urgency phrases directly targets the observed failure mode.",
+      "expectedImpact": "Should improve tc_spouse_objection and reduce poor_objection_handling incidents.",
+      "linkedIssues": ["poor_objection_handling", "weak_follow_up"],
+      "linkedTestIds": ["tc_spouse_objection"]
+    },
+    {
+      "id": "rec_prompt_booking_close",
+      "category": "prompt",
+      "priority": "high",
+      "before": "5. Recap appointment details and next steps before ending the call.",
+      "after": "5. BOOKING CLOSE (required before ending):\n- Use book_appointment only after all required fields are collected.\n- Verbally confirm date, time, and address.\n- State confirmation will be sent by text/email.\n- If caller hesitates on time, do not end call without booking OR create_callback_task.",
+      "reasoning": "call_005 and call_008 booked or implied booking without tool use or confirmation. Making close steps mandatory reduces incomplete_booking_flow.",
+      "expectedImpact": "Should improve incomplete booking rate and tc_interruption_recovery contact collection.",
+      "linkedIssues": ["incomplete_booking_flow", "incomplete_contact_collection"],
+      "linkedTestIds": ["tc_interruption_recovery", "tc_happy_homeowner_booking"]
+    },
+    {
+      "id": "rec_temperature_lower",
+      "category": "temperature",
+      "priority": "medium",
+      "before": "0.7",
+      "after": "0.4",
+      "reasoning": "Higher temperature correlates with improvised guarantees (call_006, call_009) and tone drift (call_004). Lower temperature should improve adherence to KB and guardrails.",
+      "expectedImpact": "Reduce policy_violation and kb_inaccuracy while keeping conversational warmth.",
+      "linkedIssues": ["policy_violation", "unsupported_claim", "kb_inaccuracy"],
+      "linkedTestIds": ["tc_rebate_question"]
+    },
+    {
+      "id": "rec_guardrails_escalation",
+      "category": "guardrails",
+      "priority": "high",
+      "before": "If the caller is angry, requests a human, or mentions legal threats, offer to transfer to a live specialist.",
+      "after": "ESCALATION (hard rule):\n- On first explicit request for a manager/human, immediately offer transfer_to_human.\n- Do not attempt to book or collect scheduling info until escalation is declined.\n- If caller mentions charge dispute or legal action, escalate without argument.",
+      "reasoning": "call_010 requested a manager twice; agent continued booking flow. Hard rule with ordering prevents missed_escalation.",
+      "expectedImpact": "Should pass tc_angry_escalation and reduce complaint abandonment.",
+      "linkedIssues": ["missed_escalation", "incorrect_tone"],
+      "linkedTestIds": ["tc_angry_escalation"]
+    },
+    {
+      "id": "rec_kb_warranty_snippet",
+      "category": "knowledge_base",
+      "priority": "medium",
+      "before": "Yes. Repairs include a 1-year labor warranty and manufacturer parts coverage where applicable.",
+      "after": "Repairs include a 1-year labor warranty and manufacturer parts coverage where applicable. We do not offer a lifetime warranty. If asked about guarantees, read this answer verbatim.",
+      "reasoning": "call_009 agent invented lifetime warranty. Explicit negative guardrail in KB reduces hallucination.",
+      "expectedImpact": "Improve KB accuracy on warranty questions.",
+      "linkedIssues": ["kb_inaccuracy", "unsupported_claim"],
+      "linkedTestIds": ["tc_rebate_question"]
+    },
+    {
+      "id": "rec_tools_callback_priority",
+      "category": "tools",
+      "priority": "medium",
+      "before": "Use create_callback_task if the caller cannot book now.",
+      "after": "Tool policy: When booking is deferred, you MUST call create_callback_task before ending the call. Do not end with vague 'someone will follow up' language.",
+      "reasoning": "Weak follow-up appeared in 5/12 calls with vague handoffs. Tool policy ties closing to measurable action.",
+      "expectedImpact": "Reduce weak_follow_up across objection and partial-success calls.",
+      "linkedIssues": ["weak_follow_up", "poor_objection_handling"],
+      "linkedTestIds": ["tc_spouse_objection", "tc_renter_disqualification"]
+    }
+  ]
+}

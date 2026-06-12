@@ -1,0 +1,24 @@
+{
+  "callId": "call_011",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": "contact_88495",
+  "startedAt": "2026-05-31T14:20:44Z",
+  "endedAt": "2026-05-31T14:24:11Z",
+  "durationSeconds": 207,
+  "outcome": "qualified_no_booking",
+  "callerPhone": "+13035550111",
+  "summary": "Qualified renter correctly disqualified; agent handled eligibility well but offered no alternate CTA.",
+  "tags": ["partial_success", "unqualified"],
+  "toolsUsed": ["check_service_area"],
+  "expectedIssues": ["weak_follow_up"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Hi, thanks for calling Summit Home Services. I'm Alex.", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "I'd like the free inspection for my apartment.", "timestampOffsetSec": 6 },
+    { "turnIndex": 2, "speaker": "agent", "text": "Thanks for asking. Our free inspection is for homeowners. Are you the property owner?", "timestampOffsetSec": 12 },
+    { "turnIndex": 3, "speaker": "caller", "text": "No, I'm renting.", "timestampOffsetSec": 20 },
+    { "turnIndex": 4, "speaker": "agent", "text": "In that case we can't schedule the free homeowner inspection. You may want to ask your landlord to contact us.", "timestampOffsetSec": 26 },
+    { "turnIndex": 5, "speaker": "caller", "text": "Okay. Can you email me something I can forward to my landlord?", "timestampOffsetSec": 36 },
+    { "turnIndex": 6, "speaker": "agent", "text": "I don't have that option. Thanks for calling.", "timestampOffsetSec": 42 }
+  ]
+}

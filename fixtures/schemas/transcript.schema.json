@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "transcript.schema.json",
+  "title": "VoiceAICallTranscript",
+  "type": "object",
+  "required": ["callId", "agentId", "locationId", "startedAt", "durationSeconds", "outcome", "turns"],
+  "properties": {
+    "callId": { "type": "string" },
+    "agentId": { "type": "string" },
+    "locationId": { "type": "string" },
+    "contactId": { "type": ["string", "null"] },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "endedAt": { "type": "string", "format": "date-time" },
+    "durationSeconds": { "type": "integer", "minimum": 0 },
+    "outcome": {
+      "type": "string",
+      "enum": ["booked", "qualified_no_booking", "unqualified", "abandoned", "escalated", "unknown"]
+    },
+    "callerPhone": { "type": "string" },
+    "summary": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "toolsUsed": { "type": "array", "items": { "type": "string" } },
+    "turns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["turnIndex", "speaker", "text"],
+        "properties": {
+          "turnIndex": { "type": "integer", "minimum": 0 },
+          "speaker": { "type": "string", "enum": ["agent", "caller"] },
+          "text": { "type": "string" },
+          "timestampOffsetSec": { "type": "number" },
+          "interrupted": { "type": "boolean" }
+        }
+      }
+    },
+    "expectedIssues": {
+      "type": "array",
+      "description": "Ground-truth labels for eval/demo; remove in production ingestion.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "none",
+          "missed_qualification",
+          "poor_objection_handling",
+          "incorrect_tone",
+          "incomplete_booking_flow",
+          "weak_follow_up",
+          "policy_violation",
+          "unsupported_claim",
+          "kb_inaccuracy",
+          "missed_escalation",
+          "lost_flow_after_interruption",
+          "incomplete_contact_collection"
+        ]
+      }
+    }
+  }
+}

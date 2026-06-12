@@ -1,0 +1,26 @@
+# Dependencies & build output (regenerated: npm install / npm run build)
+node_modules/
+dist/
+frontend/dist/
+.vite/
+
+# Secrets & local env
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Dev/runtime artifacts (regenerated during local runs)
+backend/analysis_cache/
+backend/run_logs/
+*.log
+
+# Kept on disk for your reference — not submitted to GitHub
+brief/
+*.pdf
+Modifications.md
+fixtures/test_transcripts/
+
+# OS & editor
+.DS_Store
+.cursor/

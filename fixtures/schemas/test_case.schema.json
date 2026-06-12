@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "test_case.schema.json",
+  "title": "GeneratedTestCase",
+  "type": "object",
+  "required": ["id", "name", "type", "persona", "scenario", "callerOpening", "successCriteria", "tags"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "type": { "type": "string", "enum": ["standard", "challenging", "happy_path", "edge_case"] },
+    "persona": { "type": "string" },
+    "scenario": { "type": "string" },
+    "callerOpening": { "type": "string" },
+    "successCriteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "required"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "required": { "type": "boolean" }
+        }
+      }
+    },
+    "expectedTools": { "type": "array", "items": { "type": "string" } },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "sourceIssueTypes": { "type": "array", "items": { "type": "string" } }
+  }
+}

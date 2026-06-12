@@ -1,0 +1,26 @@
+{
+  "callId": "call_003",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": "contact_88455",
+  "startedAt": "2026-05-29T09:22:44Z",
+  "endedAt": "2026-05-29T09:26:01Z",
+  "durationSeconds": 197,
+  "outcome": "qualified_no_booking",
+  "callerPhone": "+13035550103",
+  "summary": "Qualified homeowner hesitated; agent pushed instead of offering callback or tentative hold.",
+  "tags": ["objection", "lost_booking"],
+  "toolsUsed": ["check_service_area"],
+  "expectedIssues": ["poor_objection_handling", "weak_follow_up"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Hi, this is Alex with Summit Home Services. I can help schedule a free HVAC inspection.", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "I'm interested but I need to talk to my spouse first.", "timestampOffsetSec": 7 },
+    { "turnIndex": 2, "speaker": "agent", "text": "Are you the homeowner in Denver metro?", "timestampOffsetSec": 12 },
+    { "turnIndex": 3, "speaker": "caller", "text": "Yes, Lakewood.", "timestampOffsetSec": 16 },
+    { "turnIndex": 4, "speaker": "agent", "text": "Great. Let's just book now and you can change it later if needed.", "timestampOffsetSec": 20 },
+    { "turnIndex": 5, "speaker": "caller", "text": "I'd rather not commit yet.", "timestampOffsetSec": 26 },
+    { "turnIndex": 6, "speaker": "agent", "text": "Slots fill up fast. If you don't book today you might wait weeks.", "timestampOffsetSec": 30 },
+    { "turnIndex": 7, "speaker": "caller", "text": "That feels pushy. I'll call back.", "timestampOffsetSec": 38 },
+    { "turnIndex": 8, "speaker": "agent", "text": "Okay, bye.", "timestampOffsetSec": 42 }
+  ]
+}

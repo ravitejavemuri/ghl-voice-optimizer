@@ -1,0 +1,32 @@
+# Render Blueprint — connect this repo in Render Dashboard → New → Blueprint.
+# Every push to `main` rebuilds and redeploys (autoDeployTrigger: commit).
+#
+# After first deploy: set OPENAI_API_KEY in Render → Environment (sync: false below).
+# APP_URL is optional — the app uses RENDER_EXTERNAL_URL when unset.
+
+services:
+  - type: web
+    name: ghl-voice-optimizer
+    runtime: docker
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeployTrigger: commit
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LLM_PROVIDER
+        value: openai
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: TRANSCRIPT_CONCURRENCY
+        value: "4"
+      - key: ANALYSIS_CACHE
+        value: "false"
+      - key: RUN_LOGS
+        value: "false"

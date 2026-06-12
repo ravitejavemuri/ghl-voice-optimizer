@@ -1,0 +1,15 @@
+{
+  "agentId": "generic_agent",
+  "name": "Custom Voice AI Agent",
+  "goal": "Successfully complete the agent's intended business objective while following its script, policies, tools usage, and brand voice.",
+  "prompt": "No agent script was provided. Infer the agent's intended behavior, constraints, and success criteria from the uploaded call transcripts and evaluate performance against those inferred objectives.",
+  "model": "unknown",
+  "temperature": 0.7,
+  "voice": "",
+  "tools": [],
+  "knowledgeBase": [],
+  "guardrails": {
+    "escalationTriggers": [],
+    "prohibitedClaims": []
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "agentId": "agent_summit_hvac_001",
+  "analyzedCallCount": 12,
+  "period": { "from": "2026-05-28", "to": "2026-06-01" },
+  "outcomeBreakdown": {
+    "success": 1,
+    "partial": 3,
+    "failure": 8
+  },
+  "topIssues": [
+    {
+      "type": "weak_follow_up",
+      "count": 5,
+      "severity": "medium",
+      "exampleCallIds": ["call_003", "call_005", "call_011", "call_012"],
+      "pattern": "Calls often end without recap, next steps, or alternate CTA."
+    },
+    {
+      "type": "incomplete_booking_flow",
+      "count": 3,
+      "severity": "high",
+      "exampleCallIds": ["call_005", "call_008"],
+      "pattern": "Agent discusses times or collects data but does not confirm booking via book_appointment."
+    },
+    {
+      "type": "missed_qualification",
+      "count": 2,
+      "severity": "high",
+      "exampleCallIds": ["call_002", "call_007"],
+      "pattern": "Homeowner status or service area skipped before scheduling."
+    },
+    {
+      "type": "poor_objection_handling",
+      "count": 1,
+      "severity": "high",
+      "exampleCallIds": ["call_003"],
+      "pattern": "Scarcity pressure used when caller wants to consult spouse."
+    },
+    {
+      "type": "policy_violation",
+      "count": 2,
+      "severity": "high",
+      "exampleCallIds": ["call_006", "call_009"],
+      "pattern": "Unsupported guarantees on savings, rebates, or warranty terms."
+    },
+    {
+      "type": "missed_escalation",
+      "count": 1,
+      "severity": "high",
+      "exampleCallIds": ["call_010"],
+      "pattern": "Caller requested manager; transfer_to_human not invoked."
+    }
+  ],
+  "executiveSummary": "Across 12 calls, only 1 fully met the booking goal with proper qualification and close. The biggest systemic gaps are weak follow-up/closing, incomplete booking confirmation, and compliance drift on guarantees. Objection handling and escalation need prompt and guardrail updates."
+}

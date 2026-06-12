@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "analysis.schema.json",
+  "title": "TranscriptAnalysis",
+  "type": "object",
+  "required": ["callId", "outcome", "overallScore", "dimensions", "issues", "summary"],
+  "properties": {
+    "callId": { "type": "string" },
+    "outcome": { "type": "string", "enum": ["success", "partial", "failure"] },
+    "overallScore": { "type": "number", "minimum": 0, "maximum": 100 },
+    "dimensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "score", "notes"],
+        "properties": {
+          "name": { "type": "string" },
+          "score": { "type": "number", "minimum": 0, "maximum": 100 },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "severity", "evidence", "turnIndex"],
+        "properties": {
+          "type": { "type": "string" },
+          "severity": { "type": "string", "enum": ["low", "medium", "high"] },
+          "evidence": { "type": "string" },
+          "turnIndex": { "type": "integer" },
+          "recommendationHint": { "type": "string" }
+        }
+      }
+    },
+    "missedOpportunities": { "type": "array", "items": { "type": "string" } },
+    "summary": { "type": "string" }
+  }
+}

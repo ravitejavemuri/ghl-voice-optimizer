@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "description": "Mock Voice AI optimizer dataset for Summit Home Services HVAC booking agent.",
+  "agentConfig": "agent_config.json",
+  "transcripts": [
+    {
+      "file": "transcripts/call_001_happy_path.json",
+      "callId": "call_001",
+      "scenario": "happy_path",
+      "expectedIssues": ["none"]
+    },
+    {
+      "file": "transcripts/call_002_missed_qualification.json",
+      "callId": "call_002",
+      "scenario": "missed_qualification",
+      "expectedIssues": ["missed_qualification"]
+    },
+    {
+      "file": "transcripts/call_003_poor_objection_handling.json",
+      "callId": "call_003",
+      "scenario": "objection_handling",
+      "expectedIssues": ["poor_objection_handling", "weak_follow_up"]
+    },
+    {
+      "file": "transcripts/call_004_incorrect_tone.json",
+      "callId": "call_004",
+      "scenario": "tone",
+      "expectedIssues": ["incorrect_tone"]
+    },
+    {
+      "file": "transcripts/call_005_incomplete_booking.json",
+      "callId": "call_005",
+      "scenario": "incomplete_booking",
+      "expectedIssues": ["incomplete_booking_flow", "weak_follow_up"]
+    },
+    {
+      "file": "transcripts/call_006_policy_violation.json",
+      "callId": "call_006",
+      "scenario": "policy_violation",
+      "expectedIssues": ["policy_violation", "unsupported_claim"]
+    },
+    {
+      "file": "transcripts/call_007_interruption_lost_flow.json",
+      "callId": "call_007",
+      "scenario": "interruption",
+      "expectedIssues": ["lost_flow_after_interruption"]
+    },
+    {
+      "file": "transcripts/call_008_incomplete_contact.json",
+      "callId": "call_008",
+      "scenario": "incomplete_contact",
+      "expectedIssues": ["incomplete_contact_collection", "incomplete_booking_flow"]
+    },
+    {
+      "file": "transcripts/call_009_kb_inaccuracy.json",
+      "callId": "call_009",
+      "scenario": "kb_inaccuracy",
+      "expectedIssues": ["kb_inaccuracy", "unsupported_claim"]
+    },
+    {
+      "file": "transcripts/call_010_missed_escalation.json",
+      "callId": "call_010",
+      "scenario": "escalation",
+      "expectedIssues": ["missed_escalation", "incorrect_tone"]
+    },
+    {
+      "file": "transcripts/call_011_partial_success.json",
+      "callId": "call_011",
+      "scenario": "partial_success",
+      "expectedIssues": ["weak_follow_up"]
+    },
+    {
+      "file": "transcripts/call_012_renter_out_of_area.json",
+      "callId": "call_012",
+      "scenario": "out_of_area",
+      "expectedIssues": ["weak_follow_up"]
+    }
+  ],
+  "goldenExamples": {
+    "analysis": "examples/sample_analysis_call_003.json",
+    "aggregatedInsights": "examples/sample_aggregated_insights.json",
+    "testCases": "examples/sample_test_cases.json",
+    "testEvaluation": "examples/sample_test_evaluation.json",
+    "recommendations": "examples/sample_recommendations.json"
+  },
+  "issueCatalog": [
+    "missed_qualification",
+    "poor_objection_handling",
+    "incorrect_tone",
+    "incomplete_booking_flow",
+    "weak_follow_up",
+    "policy_violation",
+    "unsupported_claim",
+    "kb_inaccuracy",
+    "missed_escalation",
+    "lost_flow_after_interruption",
+    "incomplete_contact_collection"
+  ]
+}

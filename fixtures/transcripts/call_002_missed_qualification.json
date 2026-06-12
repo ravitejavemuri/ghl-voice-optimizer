@@ -1,0 +1,27 @@
+{
+  "callId": "call_002",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": null,
+  "startedAt": "2026-05-28T15:11:03Z",
+  "endedAt": "2026-05-28T15:14:18Z",
+  "durationSeconds": 195,
+  "outcome": "booked",
+  "callerPhone": "+13035550102",
+  "summary": "Appointment booked but agent never confirmed homeowner status or service area.",
+  "tags": ["qualification_gap", "booked"],
+  "toolsUsed": ["book_appointment"],
+  "expectedIssues": ["missed_qualification"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Summit Home Services, this is Alex. I can schedule your free HVAC inspection.", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "I need someone to check my furnace before winter.", "timestampOffsetSec": 6 },
+    { "turnIndex": 2, "speaker": "agent", "text": "Sure. What's your name and address?", "timestampOffsetSec": 12 },
+    { "turnIndex": 3, "speaker": "caller", "text": "James Reed, 88 Pine Road, Boulder.", "timestampOffsetSec": 18 },
+    { "turnIndex": 4, "speaker": "agent", "text": "Thanks James. I can do tomorrow at 9 AM. Does that work?", "timestampOffsetSec": 26 },
+    { "turnIndex": 5, "speaker": "caller", "text": "Yeah that's fine.", "timestampOffsetSec": 32 },
+    { "turnIndex": 6, "speaker": "agent", "text": "You're all set for tomorrow at 9. We'll see you then.", "timestampOffsetSec": 36 },
+    { "turnIndex": 7, "speaker": "caller", "text": "Wait, do you need my phone number?", "timestampOffsetSec": 42 },
+    { "turnIndex": 8, "speaker": "agent", "text": "Oh right, what's the best number?", "timestampOffsetSec": 46 },
+    { "turnIndex": 9, "speaker": "caller", "text": "303-555-0199.", "timestampOffsetSec": 50 }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "callId": "call_005",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": "contact_88467",
+  "startedAt": "2026-05-29T16:40:08Z",
+  "endedAt": "2026-05-29T16:43:55Z",
+  "durationSeconds": 227,
+  "outcome": "unknown",
+  "callerPhone": "+13035550105",
+  "summary": "Agent collected contact info and discussed times but never confirmed a booking or used book_appointment.",
+  "tags": ["booking_gap"],
+  "toolsUsed": ["check_service_area"],
+  "expectedIssues": ["incomplete_booking_flow", "weak_follow_up"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Hi, Alex from Summit Home Services. I can help schedule your free HVAC inspection.", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "Great, I'm a homeowner in Centennial.", "timestampOffsetSec": 7 },
+    { "turnIndex": 2, "speaker": "agent", "text": "Perfect. May I have your name, phone, email, and address?", "timestampOffsetSec": 12 },
+    { "turnIndex": 3, "speaker": "caller", "text": "Daniel Cho. 303-555-0116. dan.cho at mail dot com. 2200 Oak Lane, Centennial 80112.", "timestampOffsetSec": 20 },
+    { "turnIndex": 4, "speaker": "agent", "text": "Thanks Daniel. We usually have mornings open next week.", "timestampOffsetSec": 45 },
+    { "turnIndex": 5, "speaker": "caller", "text": "Tuesday morning works for me.", "timestampOffsetSec": 52 },
+    { "turnIndex": 6, "speaker": "agent", "text": "Sounds good. Someone will follow up with you.", "timestampOffsetSec": 58 },
+    { "turnIndex": 7, "speaker": "caller", "text": "So is it booked for Tuesday?", "timestampOffsetSec": 64 },
+    { "turnIndex": 8, "speaker": "agent", "text": "The team will confirm. Thanks for calling Summit Home Services.", "timestampOffsetSec": 70 }
+  ]
+}

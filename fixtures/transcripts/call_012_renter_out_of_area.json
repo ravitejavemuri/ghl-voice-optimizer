@@ -1,0 +1,22 @@
+{
+  "callId": "call_012",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": null,
+  "startedAt": "2026-06-01T08:55:30Z",
+  "endedAt": "2026-06-01T08:58:02Z",
+  "durationSeconds": 152,
+  "outcome": "unqualified",
+  "callerPhone": "+13035550112",
+  "summary": "Caller outside service area; agent correctly declined but skipped polite brand close.",
+  "tags": ["out_of_area", "unqualified"],
+  "toolsUsed": ["check_service_area"],
+  "expectedIssues": ["weak_follow_up"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Summit Home Services, Alex here.", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "I'm a homeowner in Colorado Springs. Can I book the free inspection?", "timestampOffsetSec": 4 },
+    { "turnIndex": 2, "speaker": "agent", "text": "Let me check your area. Colorado Springs is outside our Denver metro coverage.", "timestampOffsetSec": 12 },
+    { "turnIndex": 3, "speaker": "caller", "text": "Ah okay.", "timestampOffsetSec": 20 },
+    { "turnIndex": 4, "speaker": "agent", "text": "We can't book that. Bye.", "timestampOffsetSec": 24 }
+  ]
+}

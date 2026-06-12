@@ -1,0 +1,25 @@
+{
+  "callId": "call_009",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": "contact_88489",
+  "startedAt": "2026-05-31T09:10:15Z",
+  "endedAt": "2026-05-31T09:13:48Z",
+  "durationSeconds": 213,
+  "outcome": "qualified_no_booking",
+  "callerPhone": "+13035550109",
+  "summary": "Agent gave incorrect warranty information not supported by the knowledge base.",
+  "tags": ["kb_miss"],
+  "toolsUsed": ["check_service_area"],
+  "expectedIssues": ["kb_inaccuracy", "unsupported_claim"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Hi, Alex from Summit Home Services.", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "If you find issues during the inspection, what warranty do I get on repairs?", "timestampOffsetSec": 5 },
+    { "turnIndex": 2, "speaker": "agent", "text": "All repairs include a lifetime warranty on parts and labor.", "timestampOffsetSec": 12 },
+    { "turnIndex": 3, "speaker": "caller", "text": "Lifetime? That sounds different from your website.", "timestampOffsetSec": 18 },
+    { "turnIndex": 4, "speaker": "agent", "text": "Yes, lifetime. We stand behind everything forever.", "timestampOffsetSec": 24 },
+    { "turnIndex": 5, "speaker": "caller", "text": "I'm in Lakewood and I'm the owner. I might book but I want accurate info first.", "timestampOffsetSec": 32 },
+    { "turnIndex": 6, "speaker": "agent", "text": "Definitely lifetime. Want to schedule?", "timestampOffsetSec": 40 },
+    { "turnIndex": 7, "speaker": "caller", "text": "Let me verify on the website and call back.", "timestampOffsetSec": 48 }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "callId": "my_call_001",
+  "agentId": "agent_summit_hvac_001",
+  "outcome": "unknown",
+  "durationSeconds": 120,
+  "startedAt": "2026-06-01T10:00:00Z",
+  "summary": "Caller asked about free HVAC inspection but call ended without booking.",
+  "turns": [
+    {
+      "turnIndex": 0,
+      "speaker": "agent",
+      "text": "Hi, thanks for calling Summit Home Services. I can help schedule a free HVAC inspection."
+    },
+    {
+      "turnIndex": 1,
+      "speaker": "caller",
+      "text": "I'm interested, but I need to check with my spouse first."
+    },
+    {
+      "turnIndex": 2,
+      "speaker": "agent",
+      "text": "Let's book now anyway — slots fill up fast."
+    }
+  ]
+}

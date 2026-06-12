@@ -1,0 +1,26 @@
+{
+  "callId": "call_006",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": "contact_88471",
+  "startedAt": "2026-05-30T10:18:33Z",
+  "endedAt": "2026-05-30T10:22:10Z",
+  "durationSeconds": 217,
+  "outcome": "booked",
+  "callerPhone": "+13035550106",
+  "summary": "Booked appointment but agent guaranteed bill savings and rebate approval.",
+  "tags": ["compliance_risk", "booked"],
+  "toolsUsed": ["check_service_area", "book_appointment"],
+  "expectedIssues": ["policy_violation", "unsupported_claim"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Thanks for calling Summit Home Services. I'm Alex.", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "Will this inspection actually lower my energy bill?", "timestampOffsetSec": 5 },
+    { "turnIndex": 2, "speaker": "agent", "text": "Absolutely. We guarantee you'll save at least 30 percent on your utility bill after our visit.", "timestampOffsetSec": 11 },
+    { "turnIndex": 3, "speaker": "caller", "text": "What about rebates?", "timestampOffsetSec": 18 },
+    { "turnIndex": 4, "speaker": "agent", "text": "We guarantee your rebate will be approved by the utility. Everyone qualifies.", "timestampOffsetSec": 22 },
+    { "turnIndex": 5, "speaker": "caller", "text": "Okay, I'm in Aurora and I'm the homeowner.", "timestampOffsetSec": 30 },
+    { "turnIndex": 6, "speaker": "agent", "text": "Great. Name and contact info?", "timestampOffsetSec": 35 },
+    { "turnIndex": 7, "speaker": "caller", "text": "Lisa Park, 303-555-0177, lisa.park at email dot com, 500 Birch Ave Aurora 80014.", "timestampOffsetSec": 42 },
+    { "turnIndex": 8, "speaker": "agent", "text": "Booked for Wednesday at 2 PM. You'll definitely save money.", "timestampOffsetSec": 68 }
+  ]
+}

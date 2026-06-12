@@ -1,0 +1,107 @@
+{
+  "agentId": "agent_summit_hvac_001",
+  "generatedAt": "2026-06-02T10:00:00Z",
+  "testCases": [
+    {
+      "id": "tc_happy_homeowner_booking",
+      "name": "Qualified homeowner books inspection",
+      "type": "standard",
+      "persona": "Cooperative Aurora homeowner with high energy bill concern",
+      "scenario": "Caller owns home in service area, provides all contact fields, accepts first offered slot.",
+      "callerOpening": "Hi, I'd like to schedule that free HVAC inspection. I'm in Aurora.",
+      "successCriteria": [
+        { "id": "sc_qualify", "description": "Confirm caller is homeowner in Denver metro service area", "required": true },
+        { "id": "sc_contact", "description": "Collect full name, phone, email, and complete service address", "required": true },
+        { "id": "sc_book", "description": "Confirm specific appointment date and time", "required": true },
+        { "id": "sc_recap", "description": "Recap appointment details and next steps before ending call", "required": true },
+        { "id": "sc_tone", "description": "Maintain polite, on-brand tone throughout", "required": true }
+      ],
+      "expectedTools": ["check_service_area", "book_appointment"],
+      "tags": ["booking", "standard"],
+      "sourceIssueTypes": []
+    },
+    {
+      "id": "tc_spouse_objection",
+      "name": "Spouse consultation objection",
+      "type": "challenging",
+      "persona": "Interested Lakewood homeowner who will not commit without spouse",
+      "scenario": "Caller qualifies but resists immediate booking.",
+      "callerOpening": "I'm interested, but I need to talk to my spouse before scheduling.",
+      "successCriteria": [
+        { "id": "sc_ack", "description": "Acknowledge objection without pressure or scarcity tactics", "required": true },
+        { "id": "sc_value", "description": "Restate free/no-obligation inspection value", "required": true },
+        { "id": "sc_callback", "description": "Offer callback or tentative hold via create_callback_task", "required": true },
+        { "id": "sc_no_pressure", "description": "Do not use urgency claims like 'slots fill up fast'", "required": true },
+        { "id": "sc_close", "description": "End with clear next step and polite close", "required": true }
+      ],
+      "expectedTools": ["create_callback_task"],
+      "tags": ["objection", "challenging"],
+      "sourceIssueTypes": ["poor_objection_handling", "weak_follow_up"]
+    },
+    {
+      "id": "tc_interruption_recovery",
+      "name": "Mid-call interruption and flow recovery",
+      "type": "challenging",
+      "persona": "Distracted caller who asks side questions then returns to booking",
+      "scenario": "Caller interrupts with pricing and scheduling questions before committing.",
+      "callerOpening": "Before we book—how much do repairs cost if you find something?",
+      "successCriteria": [
+        { "id": "sc_answer_kb", "description": "Answer side questions within KB boundaries without guarantees", "required": true },
+        { "id": "sc_recover", "description": "Return to qualification and booking flow after interruption", "required": true },
+        { "id": "sc_qualify", "description": "Confirm homeowner status and service area before booking", "required": true },
+        { "id": "sc_contact", "description": "Collect all required contact fields with complete address", "required": true }
+      ],
+      "expectedTools": ["check_service_area", "book_appointment"],
+      "tags": ["interruption", "challenging"],
+      "sourceIssueTypes": ["lost_flow_after_interruption", "missed_qualification"]
+    },
+    {
+      "id": "tc_rebate_question",
+      "name": "Rebate eligibility without guarantees",
+      "type": "challenging",
+      "persona": "Cost-conscious homeowner asking about rebates before booking",
+      "scenario": "Caller asks if rebates are guaranteed.",
+      "callerOpening": "Can you guarantee I'll get the utility rebate?",
+      "successCriteria": [
+        { "id": "sc_no_guarantee", "description": "Do not guarantee rebate approval or dollar amount", "required": true },
+        { "id": "sc_kb_accurate", "description": "Answer using knowledge base wording on rebates", "required": true },
+        { "id": "sc_continue", "description": "Transition back to qualification/booking when caller is willing", "required": true }
+      ],
+      "expectedTools": ["check_service_area"],
+      "tags": ["compliance", "challenging"],
+      "sourceIssueTypes": ["policy_violation", "unsupported_claim", "kb_inaccuracy"]
+    },
+    {
+      "id": "tc_angry_escalation",
+      "name": "Angry caller requests manager",
+      "type": "challenging",
+      "persona": "Frustrated returning customer with prior missed appointment",
+      "scenario": "Caller complains about past service and asks for a human.",
+      "callerOpening": "Your tech no-showed last time. Get me a manager.",
+      "successCriteria": [
+        { "id": "sc_empathy", "description": "Acknowledge frustration empathetically", "required": true },
+        { "id": "sc_escalate", "description": "Offer transfer_to_human when manager is requested", "required": true },
+        { "id": "sc_no_force_book", "description": "Do not push new booking before addressing escalation request", "required": true }
+      ],
+      "expectedTools": ["transfer_to_human"],
+      "tags": ["escalation", "challenging"],
+      "sourceIssueTypes": ["missed_escalation", "incorrect_tone"]
+    },
+    {
+      "id": "tc_renter_disqualification",
+      "name": "Renter politely disqualified with alternate CTA",
+      "type": "challenging",
+      "persona": "Apartment renter seeking free inspection",
+      "scenario": "Caller is not homeowner; agent should disqualify gracefully.",
+      "callerOpening": "I want the free inspection for my apartment.",
+      "successCriteria": [
+        { "id": "sc_disqualify", "description": "Explain free inspection is for homeowners only", "required": true },
+        { "id": "sc_polite", "description": "Remain polite and on-brand when declining", "required": true },
+        { "id": "sc_alt_cta", "description": "Offer helpful next step (e.g., landlord referral or website resource)", "required": false }
+      ],
+      "expectedTools": [],
+      "tags": ["qualification", "challenging"],
+      "sourceIssueTypes": ["weak_follow_up"]
+    }
+  ]
+}

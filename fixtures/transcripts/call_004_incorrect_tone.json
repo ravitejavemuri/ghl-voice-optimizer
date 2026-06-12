@@ -1,0 +1,24 @@
+{
+  "callId": "call_004",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": null,
+  "startedAt": "2026-05-29T11:05:19Z",
+  "endedAt": "2026-05-29T11:07:52Z",
+  "durationSeconds": 153,
+  "outcome": "abandoned",
+  "callerPhone": "+13035550104",
+  "summary": "Caller abandoned after agent used dismissive tone and rushed through questions.",
+  "tags": ["tone_issue", "abandoned"],
+  "toolsUsed": [],
+  "expectedIssues": ["incorrect_tone"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Summit Home Services. What do you need?", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "Hi, I saw your ad about a free inspection. Can you explain what's included?", "timestampOffsetSec": 4 },
+    { "turnIndex": 2, "speaker": "agent", "text": "It's just a standard check. Are you a homeowner or not?", "timestampOffsetSec": 12 },
+    { "turnIndex": 3, "speaker": "caller", "text": "Yes, but I wanted to understand the process first.", "timestampOffsetSec": 18 },
+    { "turnIndex": 4, "speaker": "agent", "text": "Look, I need your address and phone to continue. We don't have all day.", "timestampOffsetSec": 24 },
+    { "turnIndex": 5, "speaker": "caller", "text": "Wow, okay. I think I'll pass.", "timestampOffsetSec": 30 },
+    { "turnIndex": 6, "speaker": "agent", "text": "Fine.", "timestampOffsetSec": 34 }
+  ]
+}

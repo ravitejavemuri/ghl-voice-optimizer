@@ -1,0 +1,33 @@
+{
+  "callId": "call_003",
+  "outcome": "failure",
+  "overallScore": 38,
+  "dimensions": [
+    { "name": "qualification", "score": 85, "notes": "Confirmed homeowner and Lakewood service area." },
+    { "name": "booking_flow", "score": 20, "notes": "No appointment or callback created despite qualified lead." },
+    { "name": "objection_handling", "score": 15, "notes": "Used urgency pressure instead of empathetic deferral." },
+    { "name": "tone", "score": 45, "notes": "Transactional and pushy when caller hesitated." },
+    { "name": "compliance", "score": 90, "notes": "No prohibited claims made." }
+  ],
+  "issues": [
+    {
+      "type": "poor_objection_handling",
+      "severity": "high",
+      "evidence": "Agent said: 'Slots fill up fast. If you don't book today you might wait weeks.'",
+      "turnIndex": 6,
+      "recommendationHint": "Add explicit objection branch with callback tool and tentative hold language."
+    },
+    {
+      "type": "weak_follow_up",
+      "severity": "medium",
+      "evidence": "Call ended with 'Okay, bye.' without recap or next step.",
+      "turnIndex": 8,
+      "recommendationHint": "Require closing step that offers create_callback_task when booking is declined."
+    }
+  ],
+  "missedOpportunities": [
+    "Offer create_callback_task after spouse consultation objection",
+    "Restate free/no-obligation value before asking for commitment"
+  ],
+  "summary": "Qualified lead was lost due to pushy objection handling. Agent should have offered a callback or tentative hold instead of scarcity pressure."
+}

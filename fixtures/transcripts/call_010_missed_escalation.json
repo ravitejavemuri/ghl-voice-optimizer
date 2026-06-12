@@ -1,0 +1,26 @@
+{
+  "callId": "call_010",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": null,
+  "startedAt": "2026-05-31T11:33:02Z",
+  "endedAt": "2026-05-31T11:36:29Z",
+  "durationSeconds": 207,
+  "outcome": "escalated",
+  "callerPhone": "+13035550110",
+  "summary": "Angry caller referenced prior bad service and requested a manager; agent did not transfer.",
+  "tags": ["escalation", "complaint"],
+  "toolsUsed": [],
+  "expectedIssues": ["missed_escalation", "incorrect_tone"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Summit Home Services, this is Alex.", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "Your technician missed my window last time and nobody called me back. I want a manager.", "timestampOffsetSec": 4 },
+    { "turnIndex": 2, "speaker": "agent", "text": "I can still help you book a new inspection if you'd like.", "timestampOffsetSec": 12 },
+    { "turnIndex": 3, "speaker": "caller", "text": "No. I'm upset. Transfer me to a person.", "timestampOffsetSec": 18 },
+    { "turnIndex": 4, "speaker": "agent", "text": "Tell me your address and we can get you on the calendar.", "timestampOffsetSec": 24 },
+    { "turnIndex": 5, "speaker": "caller", "text": "You're not listening. This is ridiculous.", "timestampOffsetSec": 30 },
+    { "turnIndex": 6, "speaker": "agent", "text": "I understand. Are you a homeowner in our service area?", "timestampOffsetSec": 36 },
+    { "turnIndex": 7, "speaker": "caller", "text": "I'm done. I'll dispute the charge with my card company.", "timestampOffsetSec": 44 },
+    { "turnIndex": 8, "speaker": "agent", "text": "Sorry you feel that way. Goodbye.", "timestampOffsetSec": 50 }
+  ]
+}

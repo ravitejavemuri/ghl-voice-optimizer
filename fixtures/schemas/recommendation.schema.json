@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recommendation.schema.json",
+  "title": "OptimizationRecommendation",
+  "type": "object",
+  "required": ["id", "category", "priority", "before", "after", "reasoning", "expectedImpact", "linkedIssues", "linkedTestIds"],
+  "properties": {
+    "id": { "type": "string" },
+    "category": {
+      "type": "string",
+      "enum": ["prompt", "temperature", "model", "tools", "knowledge_base", "guardrails"]
+    },
+    "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+    "before": { "type": "string" },
+    "after": { "type": "string" },
+    "reasoning": { "type": "string" },
+    "expectedImpact": { "type": "string" },
+    "linkedIssues": { "type": "array", "items": { "type": "string" } },
+    "linkedTestIds": { "type": "array", "items": { "type": "string" } }
+  }
+}

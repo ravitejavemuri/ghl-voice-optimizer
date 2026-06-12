@@ -1,0 +1,28 @@
+{
+  "callId": "call_001",
+  "agentId": "agent_summit_hvac_001",
+  "locationId": "loc_summit_denver_01",
+  "contactId": "contact_88421",
+  "startedAt": "2026-05-28T14:02:11Z",
+  "endedAt": "2026-05-28T14:06:42Z",
+  "durationSeconds": 271,
+  "outcome": "booked",
+  "callerPhone": "+13035550101",
+  "summary": "Homeowner in Denver booked a free HVAC inspection for Thursday at 10 AM.",
+  "tags": ["happy_path", "booked"],
+  "toolsUsed": ["check_service_area", "book_appointment"],
+  "expectedIssues": ["none"],
+  "turns": [
+    { "turnIndex": 0, "speaker": "agent", "text": "Hi, thanks for calling Summit Home Services. I'm Alex. I can help you schedule a free HVAC efficiency inspection. How can I help today?", "timestampOffsetSec": 0 },
+    { "turnIndex": 1, "speaker": "caller", "text": "Yeah, my AC has been running a lot and my bill is higher. I'd like someone to take a look.", "timestampOffsetSec": 8 },
+    { "turnIndex": 2, "speaker": "agent", "text": "I can definitely help with that. First, are you the homeowner, and is the property in the Denver metro area?", "timestampOffsetSec": 18 },
+    { "turnIndex": 3, "speaker": "caller", "text": "Yes, I own the home in Aurora.", "timestampOffsetSec": 26 },
+    { "turnIndex": 4, "speaker": "agent", "text": "Great, Aurora is in our service area. Can I get your full name, phone number, email, and the service address?", "timestampOffsetSec": 32 },
+    { "turnIndex": 5, "speaker": "caller", "text": "Maria Gonzalez. Phone is 303-555-0142. Email maria.g at email dot com. Address is 1420 Elm Street, Aurora, 80012.", "timestampOffsetSec": 42 },
+    { "turnIndex": 6, "speaker": "agent", "text": "Thank you, Maria. I have Thursday at 10 AM or Friday at 1 PM available. Which works better?", "timestampOffsetSec": 68 },
+    { "turnIndex": 7, "speaker": "caller", "text": "Thursday at 10 works.", "timestampOffsetSec": 76 },
+    { "turnIndex": 8, "speaker": "agent", "text": "Perfect. I've booked your free inspection for Thursday at 10 AM at 1420 Elm Street. You'll get a confirmation text and email. Our technician will review your system efficiency and answer any questions. Anything else I can help with?", "timestampOffsetSec": 82 },
+    { "turnIndex": 9, "speaker": "caller", "text": "No, that's all. Thanks.", "timestampOffsetSec": 98 },
+    { "turnIndex": 10, "speaker": "agent", "text": "You're welcome, Maria. We look forward to seeing you Thursday.", "timestampOffsetSec": 102 }
+  ]
+}
