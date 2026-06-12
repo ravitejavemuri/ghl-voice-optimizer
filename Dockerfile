@@ -19,6 +19,7 @@ COPY backend/package.json backend/package-lock.json* ./backend/
 RUN npm install --prefix backend --omit=dev
 
 COPY backend ./backend
+COPY fixtures ./fixtures
 COPY --from=build /app/frontend/dist ./frontend/dist
 
 ENV NODE_ENV=production

@@ -2,7 +2,7 @@
 # Every push to `main` rebuilds and redeploys (autoDeployTrigger: commit).
 #
 # After first deploy: set OPENAI_API_KEY in Render → Environment (sync: false below).
-# APP_URL is optional — the app uses RENDER_EXTERNAL_URL when unset.
+# APP_URL is not set here — Render injects RENDER_EXTERNAL_URL automatically.
 
 services:
   - type: web
@@ -21,8 +21,6 @@ services:
       - key: OPENAI_MODEL
         value: gpt-4o-mini
       - key: OPENAI_API_KEY
-        sync: false
-      - key: APP_URL
         sync: false
       - key: TRANSCRIPT_CONCURRENCY
         value: "4"
