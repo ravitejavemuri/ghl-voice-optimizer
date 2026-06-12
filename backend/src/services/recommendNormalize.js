@@ -4,8 +4,6 @@ const GENERIC_SNIPPET = [
   /^n\/?a$/i,
 ];
 
-const MIN_ISSUE_SCORE = 2;
-
 function normalizeNewlines(text) {
   return (text ?? '').replace(/\r\n/g, '\n').trim();
 }
@@ -36,23 +34,6 @@ function scoreSection(section, issue) {
 
   const tokens = issueLower.match(/\b[a-z]{4,}\b/g) ?? [];
   score += tokens.filter((token) => lower.includes(token)).length;
-
-  const topicPairs = [
-    [/service area|verification|qualif/i, /service area|homeowner|qualif|denver/i],
-    [/book|appointment|schedul/i, /book|appointment|schedul|slot/i],
-    [/escalat|manager|human|transfer/i, /escalat|manager|human|transfer|angry/i],
-    [/objection|pressure|spouse/i, /objection|pressure|callback|think/i],
-    [/warranty|guarantee|rebate|kb/i, /warranty|guarantee|rebate|knowledge|boundar/i],
-    [/follow.?up|recap|close/i, /recap|next step|close|callback/i],
-    [/tool|check_service/i, /tool|check_service|book_appointment/i],
-    [/contact|collect|phone|email|address/i, /collect|name|phone|email|address|contact/i],
-  ];
-
-  for (const [issuePattern, sectionPattern] of topicPairs) {
-    if (issuePattern.test(issueLower) && sectionPattern.test(lower)) {
-      score += 4;
-    }
-  }
 
   return score;
 }
@@ -152,11 +133,6 @@ export function beforeAfterMismatch(before, after) {
   return Boolean(headerBefore && headerAfter && headerBefore !== headerAfter);
 }
 
-function beforeMatchesIssue(before, issue) {
-  if (!issue) return true;
-  return scoreSection(before, issue) >= MIN_ISSUE_SCORE;
-}
-
 /** Find the prompt excerpt that `after` is actually rewriting. */
 function findPromptExcerptForAfter(prompt, after) {
   const normalized = normalizeNewlines(after);
@@ -203,47 +179,8 @@ function realignMismatchedPair(agentPrompt, before, after) {
 }
 
 function buildPromptAfter(before, issue) {
-  const issueLower = issue.toLowerCase();
-  const additions = [];
-
-  if (/service area|verification|qualif|homeowner/i.test(issueLower)) {
-    additions.push(
-      '- REQUIRED: Confirm homeowner status AND service area before collecting contact details or offering times.'
-    );
-    additions.push('- ALWAYS call check_service_area when a city or ZIP is mentioned.');
-  }
-  if (/book|appointment|incomplete|schedul/i.test(issueLower)) {
-    additions.push(
-      '- REQUIRED: Call book_appointment only after all fields are collected, then verbally confirm date, time, and address.'
-    );
-  }
-  if (/escalat|manager|human|transfer/i.test(issueLower)) {
-    additions.push(
-      '- REQUIRED: On first request for a manager or human, offer transfer_to_human immediately — do not continue booking.'
-    );
-  }
-  if (/objection|pressure|spouse|callback/i.test(issueLower)) {
-    additions.push(
-      '- REQUIRED: Acknowledge without pressure; offer create_callback_task or a tentative hold — never use scarcity language.'
-    );
-  }
-  if (/warranty|guarantee|rebate|kb|policy/i.test(issueLower)) {
-    additions.push('- REQUIRED: Answer only from the knowledge base; never invent warranty or savings guarantees.');
-  }
-  if (/follow.?up|recap|close/i.test(issueLower)) {
-    additions.push('- REQUIRED: Recap appointment details and next steps, or create_callback_task before ending the call.');
-  }
-  if (/contact|collect|phone|email|address/i.test(issueLower)) {
-    additions.push(
-      '- REQUIRED: Collect full name, phone number, email, and service address before offering appointment times.'
-    );
-  }
-
-  if (!additions.length) {
-    additions.push(`- REQUIRED: Address "${issue}" before moving to the next conversation step.`);
-  }
-
-  return `${before.trim()}\n${additions.join('\n')}`;
+  const label = issue?.trim() || 'this issue';
+  return `${before.trim()}\n- REQUIRED: Address "${label}" before moving to the next conversation step.`;
 }
 
 function normalizePromptRecommendation(rec, agentPrompt) {
@@ -260,15 +197,6 @@ function normalizePromptRecommendation(rec, agentPrompt) {
 
   if (isGenericSnippet(before) || !excerptInPrompt(agentPrompt, before)) {
     return null;
-  }
-
-  // LLM often reuses the same snippet for every failure — re-anchor to the issue topic.
-  if (!beforeMatchesIssue(before, issue)) {
-    const excerpt = findBestPromptExcerpt(agentPrompt, issue);
-    if (excerpt && scoreSection(excerpt, issue) > scoreSection(before, issue)) {
-      before = excerpt;
-      after = buildPromptAfter(before, issue);
-    }
   }
 
   if (beforeAfterMismatch(before, after)) {
