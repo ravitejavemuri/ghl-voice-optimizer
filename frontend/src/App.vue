@@ -12,13 +12,11 @@ const uploadMessage = ref('');
 const sessionNotice = ref('');
 const health = ref(null);
 const agent = ref(null);
-const agentMeta = ref(null);
 const agentGoal = ref('');
 const agentPrompt = ref('');
 const agentName = ref('');
 const agentScript = ref('');
 const scriptInput = ref(null);
-const transcriptMeta = ref(null);
 const transcripts = ref([]);
 const pasteJson = ref('');
 const isDragging = ref(false);
@@ -36,7 +34,6 @@ const selectedCallId = ref(null);
 const selectedTranscript = ref(null);
 const selectedAnalysis = ref(null);
 const selectedRec = ref(null);
-const embedLocationId = ref('');
 
 const tabs = [
   { id: 'home', label: 'Home', icon: '⌂' },
@@ -54,6 +51,33 @@ function tabReady(t) {
 }
 
 const optimizedPrompt = computed(() => state.value.optimizedAgent?.prompt ?? '');
+
+const footerModeLabel = computed(() => 'Voice AI Agent Optimizer');
+
+const footerAgentLabel = computed(() => {
+  const name = agentName.value?.trim() || health.value?.agentName || agent.value?.name;
+  return name || 'No agent loaded';
+});
+
+const footerLlmLabel = computed(() => {
+  const label = health.value?.modelLabel || health.value?.model;
+  const provider = health.value?.provider;
+  if (label && provider) return `${provider} · ${label}`;
+  if (label) return label;
+  return 'LLM not configured';
+});
+
+const footerTranscriptLabel = computed(() => {
+  const count = transcripts.value.length || health.value?.transcriptCount || 0;
+  return `${count} transcript${count === 1 ? '' : 's'} loaded`;
+});
+
+const footerAnalysisLabel = computed(() => {
+  const n = state.value.analyses.length;
+  if (!n) return null;
+  if (state.value.recommendations) return `Analysis complete · ${n} call${n === 1 ? '' : 's'}`;
+  return `Partial analysis · ${n} call${n === 1 ? '' : 's'}`;
+});
 
 const hasPasteContent = computed(() => pasteJson.value.trim().length > 0);
 const hasFileTranscripts = computed(() => transcripts.value.length > 0);
@@ -112,21 +136,17 @@ function badgeClass(variant) {
 }
 
 async function refresh() {
-  const [h, a, am, m, t, s] = await Promise.all([
+  const [h, a, t, s] = await Promise.all([
     api.health(),
     api.agent(),
-    api.agentMeta(),
-    api.transcriptMeta(),
     api.transcripts(),
     api.state(),
   ]);
   health.value = h;
   agent.value = a;
-  agentMeta.value = am;
   agentGoal.value = a.goal ?? '';
   agentPrompt.value = a.prompt ?? '';
   agentName.value = a.name ?? '';
-  transcriptMeta.value = m;
   transcripts.value = t;
   state.value = s;
   syncSelectedCallView();
@@ -139,13 +159,18 @@ function syncSelectedCallView() {
     selectedAnalysis.value = null;
     return;
   }
+  if (!selectedCallId.value || !selectedTranscript.value) {
+    selectedAnalysis.value = null;
+    return;
+  }
   const stillValid = state.value.analyses.some(
     (a) => (a.call_id ?? a.callId) === selectedCallId.value
   );
   if (!stillValid) {
-    const first = state.value.analyses[0];
-    selectedCallId.value = first.call_id ?? first.callId;
+    selectedCallId.value = null;
     selectedTranscript.value = null;
+    selectedAnalysis.value = null;
+    return;
   }
   selectedAnalysis.value = analysisForCall(selectedCallId.value);
 }
@@ -444,6 +469,26 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
+/** When inner panel hits scroll limit, continue scrolling the page. */
+function scrollChainWheel(event) {
+  const el = event.currentTarget;
+  if (!el) return;
+
+  const deltaY = event.deltaY;
+  const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
+  const atTop = el.scrollTop <= 0;
+  const atBottom = el.scrollTop >= maxScroll - 1;
+  const scrollingUp = deltaY < 0;
+  const scrollingDown = deltaY > 0;
+  const chainToParent =
+    maxScroll <= 0 || (scrollingUp && atTop) || (scrollingDown && atBottom);
+
+  if (chainToParent) {
+    event.preventDefault();
+    window.scrollBy({ top: deltaY, left: 0 });
+  }
+}
+
 function switchTab(id) {
   const target = tabs.find((t) => t.id === id);
   if (!target || !tabReady(target)) return;
@@ -471,9 +516,6 @@ onMounted(async () => {
 
     const progress = await api.pipelineProgress();
     await refresh();
-
-    const params = new URLSearchParams(window.location.search);
-    embedLocationId.value = params.get('locationId') || params.get('location_id') || '';
 
     if (progress.running) {
       pipelineRunning.value = true;
@@ -600,7 +642,7 @@ onMounted(async () => {
               Upload <strong>multiple past call transcripts</strong> from your voice agent. We analyze every call for
               flaws and missed opportunities, then generate test cases and prompt improvements.
             </p>
-            <ol class="mt-4 grid gap-3 sm:grid-cols-4">
+            <ol class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <li class="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
                 <span class="font-bold text-blue-600">1.</span> Upload past calls (JSON)
               </li>
@@ -819,7 +861,7 @@ onMounted(async () => {
 
           <div v-if="state.patterns" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-base font-semibold text-slate-900">Executive summary</h2>
-            <div class="mt-4 flex flex-wrap gap-6">
+            <div class="mt-4 flex flex-wrap gap-6 sm:gap-8">
               <div>
                 <span class="text-xs font-medium uppercase tracking-wide text-slate-400">Calls analyzed</span>
                 <p class="text-2xl font-bold text-slate-900">
@@ -866,23 +908,28 @@ onMounted(async () => {
             <p v-else class="text-sm text-slate-400">No recurring strengths detected.</p>
           </div>
 
-          <div v-if="state.analyses.length" class="grid gap-5 lg:grid-cols-2">
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h3 class="mb-3 text-sm font-semibold text-slate-700">Calls</h3>
-              <div class="max-h-[70vh] space-y-2 overflow-y-auto">
+          <div
+            v-if="state.analyses.length"
+            class="grid gap-5 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)] lg:items-start"
+          >
+            <div
+              class="flex max-h-72 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-36 lg:max-h-[calc(100vh-10rem)]"
+            >
+              <h3 class="mb-3 shrink-0 text-sm font-semibold text-slate-700">Calls</h3>
+              <div class="min-h-0 flex-1 space-y-2 overflow-y-auto">
                 <button
                   v-for="t in transcripts"
                   :key="t.callId"
                   :class="[
                     'w-full rounded-xl border p-3 text-left transition',
-                    selectedCallId === t.callId
+                    selectedCallId === t.callId && selectedTranscript
                       ? 'border-blue-300 bg-blue-50 shadow-sm'
                       : 'border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-white',
                   ]"
                   @click="selectTranscript(t.callId)"
                 >
                   <div class="flex items-center justify-between gap-2">
-                    <strong class="text-sm text-slate-800">{{ t.callId }}</strong>
+                    <strong class="truncate text-sm text-slate-800">{{ t.callId }}</strong>
                     <span
                       v-if="analysisForCall(t.callId)"
                       :class="badgeClass(goalBadge(analysisForCall(t.callId).goal_achieved))"
@@ -890,34 +937,40 @@ onMounted(async () => {
                       {{ analysisForCall(t.callId).goal_achieved ? 'Goal met' : 'Goal missed' }}
                     </span>
                   </div>
-                  <p class="mt-1 line-clamp-2 text-xs text-slate-500">{{ t.summary }}</p>
+                  <p v-if="t.summary" class="mt-1 line-clamp-2 text-xs text-slate-500">{{ t.summary }}</p>
                 </button>
               </div>
             </div>
-            <div v-if="selectedTranscript" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h3 class="mb-3 text-sm font-semibold text-slate-700">{{ selectedTranscript.callId }}</h3>
-              <div class="max-h-80 space-y-2 overflow-y-auto">
+
+            <div v-if="selectedTranscript" class="flex min-w-0 flex-col gap-5">
+              <div class="flex min-h-0 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 class="mb-3 shrink-0 text-sm font-semibold text-slate-700">
+                  {{ selectedTranscript.callId }} — transcript
+                </h3>
                 <div
-                  v-for="turn in selectedTranscript.turns"
-                  :key="turn.turnIndex"
-                  :class="[
-                    'rounded-xl px-3 py-2 text-sm',
-                    turn.speaker === 'agent'
-                      ? 'mr-8 bg-blue-50 text-slate-800'
-                      : 'ml-8 bg-slate-100 text-slate-700',
-                  ]"
+                  class="flex min-h-[16rem] max-h-[min(70vh,640px)] flex-col gap-2 overflow-y-auto pr-1 sm:min-h-[20rem]"
+                  @wheel="scrollChainWheel"
                 >
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ turn.speaker }}</span>
-                  <p class="mt-0.5">{{ turn.text }}</p>
+                  <div
+                    v-for="(turn, idx) in selectedTranscript.turns"
+                    :key="turn.turnIndex ?? idx"
+                    :class="[
+                      'max-w-[92%] rounded-xl px-3 py-2 text-sm sm:max-w-[85%]',
+                      turn.speaker === 'agent'
+                        ? 'self-start bg-blue-50 text-slate-800'
+                        : 'self-end bg-slate-100 text-slate-700',
+                    ]"
+                  >
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ turn.speaker }}</span>
+                    <p class="mt-0.5 break-words">{{ turn.text }}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div
-            v-if="selectedAnalysis"
-            class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
+              <div
+                v-if="selectedAnalysis"
+                class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+              >
             <div class="mb-3 flex flex-wrap items-center gap-3">
               <h3 class="text-base font-semibold text-slate-900">
                 {{ selectedAnalysis.call_id ?? selectedAnalysis.callId }}
@@ -973,12 +1026,15 @@ onMounted(async () => {
               </ul>
               <p v-else class="text-sm text-slate-500">None identified.</p>
             </div>
-          </div>
-          <div
-            v-else-if="state.analyses.length"
-            class="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-400"
-          >
-            Select a call above to view task completion, objections, strengths, and failures.
+              </div>
+            </div>
+
+            <div
+              v-else
+              class="flex min-h-[16rem] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-400"
+            >
+              Select a call to view the transcript and per-call analysis.
+            </div>
           </div>
         </section>
 
@@ -1047,10 +1103,16 @@ onMounted(async () => {
 
             <div v-if="optimizedPrompt" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 class="mb-2 text-sm font-semibold text-slate-700">Optimized prompt (copy into your voice agent)</h3>
+              <p class="mb-3 text-xs text-slate-500">
+                Structured for copy-paste — sections, bullets, and line breaks are normalized even if your original prompt was one block or used literal \\n characters.
+              </p>
               <p v-if="state.optimizedAgent?.temperature != null" class="mb-3 text-xs text-slate-500">
                 Suggested temperature: {{ state.optimizedAgent.temperature }}
               </p>
-              <div class="max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs whitespace-pre-wrap text-slate-700">
+              <div
+                class="max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs break-words whitespace-pre-wrap text-slate-700"
+                @wheel="scrollChainWheel"
+              >
                 {{ optimizedPrompt }}
               </div>
             </div>
@@ -1078,10 +1140,12 @@ onMounted(async () => {
               </div>
             </div>
 
-            <div class="grid gap-5 lg:grid-cols-[280px_1fr]">
-              <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 class="mb-3 text-sm font-semibold text-slate-700">Recommended changes</h2>
-                <div class="max-h-[80vh] space-y-2 overflow-y-auto">
+            <div class="grid gap-5 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)] lg:items-start">
+              <div
+                class="flex max-h-80 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-36 lg:max-h-[calc(100vh-10rem)]"
+              >
+                <h2 class="mb-3 shrink-0 text-sm font-semibold text-slate-700">Recommended changes</h2>
+                <div class="min-h-0 flex-1 space-y-2 overflow-y-auto" @wheel="scrollChainWheel">
                   <button
                     v-for="r in state.recommendations?.recommendations ?? []"
                     :key="r.id"
@@ -1101,7 +1165,7 @@ onMounted(async () => {
                   </button>
                 </div>
               </div>
-              <div v-if="selectedRec" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div v-if="selectedRec" class="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                 <h2 class="text-base font-semibold capitalize text-slate-900">
                   {{ selectedRec.category }} · {{ selectedRec.priority }} priority
                 </h2>
@@ -1110,24 +1174,33 @@ onMounted(async () => {
                 <p class="mt-3 text-sm text-slate-600">
                   <strong>Expected impact:</strong> {{ selectedRec.expected_impact }}
                 </p>
-                <div class="mt-5 grid gap-4 md:grid-cols-2">
-                  <div>
+                <div class="mt-5 grid gap-4 lg:grid-cols-2">
+                  <div class="min-w-0">
                     <h4 class="mb-1 text-xs font-semibold uppercase tracking-wide text-rose-500">Before</h4>
                     <p class="mb-2 text-xs text-slate-500">Exact excerpt from your current agent prompt</p>
-                    <div class="max-h-60 overflow-y-auto rounded-xl border-l-4 border-rose-400 bg-slate-50 p-4 font-mono text-xs whitespace-pre-wrap text-slate-700">
+                    <div
+                      class="max-h-60 overflow-y-auto rounded-xl border-l-4 border-rose-400 bg-slate-50 p-4 font-mono text-xs break-words whitespace-pre-wrap text-slate-700"
+                      @wheel="scrollChainWheel"
+                    >
                       {{ selectedRec.before }}
                     </div>
                   </div>
-                  <div>
+                  <div class="min-w-0">
                     <h4 class="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-500">After</h4>
                     <p class="mb-2 text-xs text-slate-500">Replacement text for that excerpt (also merged into Optimized prompt above)</p>
-                    <div class="max-h-60 overflow-y-auto rounded-xl border-l-4 border-emerald-400 bg-slate-50 p-4 font-mono text-xs whitespace-pre-wrap text-slate-700">
+                    <div
+                      class="max-h-60 overflow-y-auto rounded-xl border-l-4 border-emerald-400 bg-slate-50 p-4 font-mono text-xs break-words whitespace-pre-wrap text-slate-700"
+                      @wheel="scrollChainWheel"
+                    >
                       {{ selectedRec.after }}
                     </div>
                   </div>
                 </div>
               </div>
-              <div v-else class="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center text-sm text-slate-400">
+              <div
+                v-else
+                class="flex min-h-[12rem] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-400"
+              >
                 Select a change to see before/after.
               </div>
             </div>
@@ -1135,10 +1208,23 @@ onMounted(async () => {
         </section>
       </main>
 
-      <footer class="mt-10 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
-        <span v-if="embedLocationId">Embedded · location {{ embedLocationId }}</span>
-        <span v-else>Local dev mode</span>
-        · Agent: {{ agent?.model }} @ temp {{ agent?.temperature }}
+      <footer class="mt-10 border-t border-slate-200 pb-8 pt-6">
+        <div class="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 text-center text-xs text-slate-500 sm:px-6">
+          <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <span class="font-medium text-slate-600">{{ footerModeLabel }}</span>
+            <span class="hidden text-slate-300 sm:inline" aria-hidden="true">·</span>
+            <span>{{ footerAgentLabel }}</span>
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-400">
+            <span>{{ footerLlmLabel }}</span>
+            <span class="text-slate-300" aria-hidden="true">·</span>
+            <span>{{ footerTranscriptLabel }}</span>
+            <template v-if="footerAnalysisLabel">
+              <span class="text-slate-300" aria-hidden="true">·</span>
+              <span>{{ footerAnalysisLabel }}</span>
+            </template>
+          </div>
+        </div>
       </footer>
     </div>
   </div>

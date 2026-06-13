@@ -1,66 +1,30 @@
 # Voice AI Agent Optimizer
 
-Local-first implementation of the HighLevel FSB take-home: analyze Voice AI transcripts, generate test cases, and recommend agent optimizations.
+Analyze Voice AI transcripts, generate test cases, and recommend agent optimizations.
 
-**Stack:** Node.js (Express) backend · Vue 3 (Vite) frontend · Ollama (default) or OpenAI
+**Stack:** Node.js (Express) · Vue 3 (Vite) · LLM-backed analysis pipeline
 
 ## Prerequisites
 
-| Tool | Version | Notes |
-|------|---------|--------|
-| **Node.js** | 18+ (20 recommended) | `node -v` |
-| **npm** | 9+ | Comes with Node |
-| **Ollama** (default LLM) | 0.6.6+ | [ollama.com](https://ollama.com) — or use OpenAI instead |
-| **Python 3** (optional) | 3.9+ | Only for `npm run validate:fixtures` |
+| Tool | Version |
+|------|---------|
+| Node.js | 18+ |
+| npm | 9+ |
 
 ## Setup
 
-### 1. Clone and install
-
 ```bash
-git clone https://github.com/<your-username>/ghl-voice-optimizer.git
-cd ghl-voice-optimizer
+git clone https://github.com/<your-username>/voice-ai-optimizer.git
+cd voice-ai-optimizer
 
-npm install              # root dev tools (concurrently)
-npm run install:all      # backend + frontend dependencies
-```
+npm install
+npm run install:all
 
-### 2. Configure environment
-
-```bash
 cp backend/.env.example backend/.env
+# Configure LLM_PROVIDER and credentials — see backend/.env.example
 ```
 
-Edit `backend/.env` for your LLM provider.
-
-**Option A — Ollama (default, local, no API key)**
-
-```bash
-brew install --cask ollama-app   # macOS
-open -a Ollama
-ollama pull qwen3:8b
-```
-
-`backend/.env` (defaults from `.env.example`):
-
-```bash
-LLM_PROVIDER=ollama
-OLLAMA_MODEL=qwen3:8b
-OLLAMA_BASE_URL=http://localhost:11434/v1
-```
-
-For higher quality (slower), set `OLLAMA_MODEL=qwen3:14b` and `ollama pull qwen3:14b`.
-
-**Option B — OpenAI (cloud, faster setup)**
-
-```bash
-LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4o-mini
-TRANSCRIPT_CONCURRENCY=4
-```
-
-### 3. Run locally
+## Run locally
 
 ```bash
 npm run dev
@@ -68,171 +32,71 @@ npm run dev
 
 | Service | URL |
 |---------|-----|
-| **Frontend** | http://localhost:5173 |
-| **Backend API** | http://localhost:3001/api/health |
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:3001/api/health |
 
-Confirm the health endpoint returns `"ok": true` and shows your AI provider.
+On the **Home** tab, load the sample agent and sample calls, then click **Analyze** to run the pipeline. Results appear in **Analysis**, **Test Cases**, and **Evaluation**.
 
-### 4. First run in the UI
-
-1. Open http://localhost:5173
-2. **Home** → click **Load sample agent** and **Load sample calls** (12 HVAC transcripts included)
-3. Click **Analyze** — runs the full 5-step pipeline (~1–3 min with Ollama 8B, faster with OpenAI)
-4. Review tabs: **Analysis** → **Test Cases** → **Evaluation**
-
-You can also paste your own agent prompt and upload transcript JSON files on the Home tab.
-
-### Production build (local)
-
-Serves the Vue app from Express on one port (same as Docker/Render):
+### Production build
 
 ```bash
-npm run build          # builds frontend/dist
-npm start              # backend on PORT (default 3001)
-# open http://localhost:3001
+npm run build
+npm start
+# http://localhost:3001
 ```
 
-### Docker (optional)
+### Docker
 
 ```bash
-cp backend/.env.example backend/.env   # set OPENAI_API_KEY for cloud LLM
+cp backend/.env.example backend/.env
 docker compose up --build -d
-# open http://localhost:3001
 ```
 
-### Validate fixtures (optional)
+## Documentation
 
-```bash
-npm run validate:fixtures
-```
-
-## Docs
-
-- [UI_GUIDE.md](UI_GUIDE.md) — every button, tab, and field
-- [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md) — architecture and AI pipeline
-- [MARKETPLACE.md](MARKETPLACE.md) — GHL embed and deploy checklist
-
-Sample HVAC data is included for demos; the optimizer itself is **domain-agnostic**.
+- [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md) — architecture and pipeline
+- [UI_GUIDE.md](UI_GUIDE.md) — dashboard tabs and controls
 
 ## Architecture
-
-Five-step LLM pipeline (see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md)):
 
 ```
 Home (inputs)
   → Goal Extraction
-  → Transcript Analysis (parallel per call)
+  → Transcript Analysis
   → Pattern Detection
-  → Test Generator
-  → Recommendation Engine
+  → Test Case Generation
+  → Recommendations + Optimized Prompt
 ```
 
 ```
-fixtures/          Sample transcripts + agent config
+fixtures/              Sample transcripts and agent config
 backend/src/
-  index.js         Express API
-  fixtures.js      Load sample data
-  store.js         In-memory session state
-  llm/             Provider (ollama | openai) + prompts
-  services/        goalExtraction → transcriptAnalyzer → patternDetection → tests → recommend
+  index.js             Express API
+  store.js             Session state
+  llm/                 Provider abstraction and prompts
+  services/            Pipeline stages
 frontend/src/
-  App.vue          Dashboard UI (4 tabs)
+  App.vue              Dashboard UI
 ```
 
 ### API endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/health` | Status + AI provider mode |
+| GET | `/api/health` | Status and provider info |
 | GET | `/api/agent` | Active agent config |
-| GET | `/api/agent/meta` | Agent source (`generic` / `uploaded` / `sample`) |
-| POST | `/api/agent` | Set agent from JSON or `{ name, goal, prompt }` |
-| POST | `/api/agent/use-generic` | Reset to generic agent |
-| POST | `/api/agent/use-sample` | Load HVAC sample agent for demo |
-| GET | `/api/transcripts/meta` | Source (samples vs uploaded) + count |
+| POST | `/api/agent` | Set agent config |
+| POST | `/api/agent/use-sample` | Load demo agent |
 | GET | `/api/transcripts` | List calls |
 | GET | `/api/transcripts/:id` | Call detail |
-| POST | `/api/transcripts/upload` | Upload JSON transcripts (`append: true` to add to batch) |
-| POST | `/api/transcripts/use-samples` | Load all 12 HVAC sample calls |
-| POST | `/api/transcripts/clear` | Clear uploaded transcripts |
-| POST | `/api/run/full` | Run entire 5-step pipeline |
-| GET | `/api/state` | Current optimizer state |
-| GET | `/api/pipeline/progress` | Pipeline progress while running |
+| POST | `/api/transcripts/upload` | Upload JSON transcripts |
+| POST | `/api/transcripts/use-samples` | Load demo transcripts |
+| POST | `/api/transcripts/clear` | Clear transcripts |
+| POST | `/api/run/full` | Run full pipeline |
+| GET | `/api/state` | Pipeline results |
+| GET | `/api/pipeline/progress` | Progress while running |
 | POST | `/api/reset` | Clear pipeline results |
 
-## What's local vs GHL production
+## Deploy to Render
 
-| Feature | Local MVP | GHL production (later) |
-|---------|-----------|------------------------|
-| Transcript ingestion | Fixture JSON files | User uploads JSON in embedded app |
-| AI pipeline | Ollama or OpenAI | OpenAI |
-| Test generation | From recurring failure patterns | OpenAI |
-| Test execution | Manual validation plan | User tests voice agent, re-uploads transcripts |
-| Recommendations | LLM from patterns + tests (concrete before/after excerpts) | OpenAI |
-| Apply config to agent | Copy optimized prompt from UI | Same — manual copy |
-| GHL embed | Local dev | Custom Menu iframe on Marketplace |
-
-## Deploy to Render (GitHub auto-deploy)
-
-Push to GitHub → Render rebuilds automatically via [`render.yaml`](render.yaml).
-
-### 1. Create a GitHub repo (this folder as root)
-
-```bash
-git add .
-git commit -m "Initial commit: Voice AI Agent Optimizer"
-gh auth login   # if needed
-gh repo create ghl-voice-optimizer --private --source=. --push
-```
-
-Use a **public** repo if you plan a public GHL Marketplace listing (`--public` instead of `--private`).
-
-### 2. Connect Render
-
-1. [dashboard.render.com](https://dashboard.render.com) → **New** → **Blueprint**
-2. Connect the GitHub repo → Render detects `render.yaml`
-3. Apply the blueprint
-4. In the service **Environment** tab, set **`OPENAI_API_KEY`** (required — Ollama does not run on Render)
-5. Optional: set **`APP_URL`** to your custom domain; otherwise Render’s `RENDER_EXTERNAL_URL` is used
-
-Every push to **`main`** triggers a new deploy (`autoDeployTrigger: commit`).
-
-Verify: `https://<your-service>.onrender.com/api/health`
-
-### 3. Custom Menu embed URL
-
-```
-https://voice-ai-optimizer.onrender.com/?locationId={{location.id}}
-```
-
-See **[MARKETPLACE.md](MARKETPLACE.md)** for the full listing checklist.
-
-### Local Docker (alternative)
-
-```bash
-# backend/.env — LLM_PROVIDER=openai + OPENAI_API_KEY for production-like runs
-docker compose up --build -d
-```
-
-## Demo script (2–5 min)
-
-1. Open **Home** → load sample agent and sample calls
-2. Click **Analyze**
-3. **Analysis** → executive summary, recurring failures, per-call task completion
-4. **Test Cases** → scenarios targeting observed failures
-5. **Evaluation** → optimized prompt + before/after recommendations
-
-## Team of one notes
-
-- **Product:** Closed-loop optimizer (analyze → test → recommend) with clear customer workflow
-- **Design:** Single dashboard, tabbed navigation, before/after diff view
-- **Engineering:** Structured JSON schemas, provider abstraction, fixture-driven dev
-- **QA:** Ground-truth `expectedIssues` on fixtures — `python scripts/validate_fixtures.py --summary`
-
-## What goes to GitHub vs stays local
-
-| Committed (reviewers see) | Gitignored (kept on your machine) |
-|---------------------------|-----------------------------------|
-| Source, `fixtures/transcripts/`, schemas, Docker/Render | `node_modules/`, `dist/`, `.env` |
-| README, TECHNICAL_GUIDE, UI_GUIDE, MARKETPLACE | `run_logs/`, `analysis_cache/` |
-| | `Modifications.md`, hiring brief PDF, `fixtures/test_transcripts/` |
+Push to GitHub and connect via [`render.yaml`](render.yaml). Set `OPENAI_API_KEY` in the Render environment. Verify at `https://<your-service>.onrender.com/api/health`.

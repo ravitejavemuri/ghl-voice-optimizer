@@ -9,7 +9,6 @@ import {
   getAgentMeta,
   setAgentConfig,
   useSampleAgentConfig,
-  useGenericAgentConfig,
   parseAgentPayload,
 } from './agentRegistry.js';
 import {
@@ -51,12 +50,8 @@ app.use(
 );
 app.use(express.json());
 
-// Allow embedding inside platform Custom Menu iframe
 app.use((_req, res, next) => {
-  res.setHeader(
-    'Content-Security-Policy',
-    "frame-ancestors 'self' https://app.gohighlevel.com https://*.gohighlevel.com https://*.leadconnectorhq.com"
-  );
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
   next();
 });
 
@@ -92,10 +87,6 @@ app.get('/api/agent', (_req, res) => {
   res.json({ ...getActiveAgentConfig(), _meta: getAgentMeta() });
 });
 
-app.get('/api/agent/meta', (_req, res) => {
-  res.json(getAgentMeta());
-});
-
 app.post('/api/agent', (req, res) => {
   try {
     const config = parseAgentPayload(req.body);
@@ -111,16 +102,6 @@ app.post('/api/agent/use-sample', (_req, res) => {
   const meta = useSampleAgentConfig();
   resetState();
   res.json({ ok: true, agent: getActiveAgentConfig(), ...meta });
-});
-
-app.post('/api/agent/use-generic', (_req, res) => {
-  const meta = useGenericAgentConfig();
-  resetState();
-  res.json({ ok: true, agent: getActiveAgentConfig(), ...meta });
-});
-
-app.get('/api/transcripts/meta', (_req, res) => {
-  res.json(getTranscriptMeta());
 });
 
 app.get('/api/transcripts', (_req, res) => {

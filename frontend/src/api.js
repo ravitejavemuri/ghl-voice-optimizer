@@ -15,14 +15,9 @@ async function request(path, options = {}) {
 export const api = {
   health: () => request('/health'),
   agent: () => request('/agent'),
-  agentMeta: () => request('/agent/meta'),
-  saveAgent: (data) =>
-    request('/agent', { method: 'POST', body: JSON.stringify({ data }) }),
   saveAgentFields: (fields) =>
     request('/agent', { method: 'POST', body: JSON.stringify(fields) }),
   useSampleAgent: () => request('/agent/use-sample', { method: 'POST' }),
-  useGenericAgent: () => request('/agent/use-generic', { method: 'POST' }),
-  transcriptMeta: () => request('/transcripts/meta'),
   transcripts: () => request('/transcripts'),
   transcript: (callId) => request(`/transcripts/${callId}`),
   uploadTranscripts: ({ data, fileNames = [], append = false }) =>

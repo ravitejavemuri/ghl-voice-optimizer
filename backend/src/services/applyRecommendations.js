@@ -1,8 +1,11 @@
 /** Merge recommendation before/after snippets into a copy of the agent config. */
+import { structurePrompt } from './promptStructure.js';
+
 export function buildOptimizedAgentConfig(agentConfig, recommendations) {
   const recs = recommendations?.recommendations ?? [];
   if (!recs.length) {
-    return { ...agentConfig };
+    const prompt = structurePrompt(agentConfig.prompt ?? '');
+    return { ...agentConfig, prompt, _meta: { ...(agentConfig._meta ?? {}), optimized: true, structured: true } };
   }
 
   let prompt = agentConfig.prompt ?? '';
@@ -23,16 +26,19 @@ export function buildOptimizedAgentConfig(agentConfig, recommendations) {
       const next = parseFloat(rec.after);
       if (!Number.isNaN(next)) temperature = next;
     } else if (category === 'escalation' && rec.after) {
-      prompt = `${prompt.trim()}\n\nESCALATION UPDATE:\n${rec.after}`;
+      prompt = `${prompt.trim()}\n\nESCALATION UPDATE\n${rec.after}`;
     } else if (['tools', 'knowledge base', 'model'].includes(category) && rec.after) {
-      prompt = `${prompt.trim()}\n\n${rec.category.toUpperCase()} UPDATE:\n${rec.after}`;
+      const header = `${rec.category.toUpperCase()} UPDATE`;
+      prompt = `${prompt.trim()}\n\n${header}\n${rec.after}`;
     }
   }
+
+  prompt = structurePrompt(prompt);
 
   return {
     ...agentConfig,
     prompt,
     temperature,
-    _meta: { ...(agentConfig._meta ?? {}), optimized: true },
+    _meta: { ...(agentConfig._meta ?? {}), optimized: true, structured: true },
   };
 }

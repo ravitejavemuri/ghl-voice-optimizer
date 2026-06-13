@@ -19,6 +19,7 @@ export async function extractGoals(provider, agentConfig) {
   return {
     required_tasks: result.required_tasks ?? [],
     expected_behaviors: result.expected_behaviors ?? [],
+    success_outcomes: result.success_outcomes ?? [],
     _input: payload,
   };
 }

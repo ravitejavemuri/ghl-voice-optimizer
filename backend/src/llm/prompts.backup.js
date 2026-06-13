@@ -1,9 +1,11 @@
-/** Optimizer LLM prompts (v2). Previous version: prompts.backup.js */
+/**
+ * Backup of optimizer LLM prompts (v1) — before goal_achieved rubric expansion.
+ * Restore by copying exports into prompts.js if needed.
+ */
 import { formatTranscriptForLlm } from './transcriptTrim.js';
 
 const MAX_GOAL_PROMPT = 1800;
 const MAX_GOAL_SCRIPT = 800;
-const MAX_AGENT_SNIPPET = 600;
 
 export function goalExtractionPrompt(agentConfig) {
   const input = {
@@ -13,49 +15,24 @@ export function goalExtractionPrompt(agentConfig) {
   };
   return `${JSON.stringify(input)}
 
-Return JSON only: {"required_tasks":["snake_case"],"expected_behaviors":["snake_case"],"success_outcomes":["snake_case"]}
-Rules:
-- required_tasks: concrete steps when applicable (qualify, collect contact, book, etc.)
-- expected_behaviors: tone, compliance, objection handling per the prompt
-- success_outcomes: valid ways to ACHIEVE the agent goal BESIDES a live booking when the prompt allows it — e.g. schedule_callback, escalate_to_human, tentative_hold, answer_blocking_questions_then_book, provide_ineligible_caller_next_steps
-- 3-8 items per array where applicable; derive ONLY from the agent config`;
+Return JSON only: {"required_tasks":["snake_case"],"expected_behaviors":["snake_case"]}
+Rules: 3-8 each; derive from input only.`;
 }
 
 export function transcriptAnalyzerPrompt(agentConfig, criteria, transcript) {
   const goal = (agentConfig.goal ?? '').slice(0, 200);
-  return `You are evaluating whether the VOICE AGENT (not the caller) achieved the agent's goal on this call.
-
-Agent goal: ${goal}
-Required tasks (when applicable): ${JSON.stringify(criteria.required_tasks ?? [])}
-Expected behaviors: ${JSON.stringify(criteria.expected_behaviors ?? [])}
-Valid success outcomes (goal can be met WITHOUT a confirmed booking): ${JSON.stringify(criteria.success_outcomes ?? [])}
+  return `Goal: ${goal}
+Tasks: ${JSON.stringify(criteria.required_tasks ?? [])}
+Behaviors: ${JSON.stringify(criteria.expected_behaviors ?? [])}
 Call: ${transcript.callId}
 
 ${formatTranscriptForLlm(transcript)}
 
-Set goal_achieved TRUE if the agent met the agent goal, including ANY valid success outcome such as:
-- Confirmed appointment/booking with specific date/time or service slot
-- Caller deferred (spouse approval, schedule check): agent offered callback or tentative hold WITHOUT pressure — and caller accepted a clear next step
-- Caller requested manager/escalation/billing help: agent transferred or committed to live handoff appropriately
-- Caller asked blocking questions (pricing, policy): agent answered accurately per prompt/KB then progressed or booked
-- Ineligible caller: agent explained why and gave a helpful alternative (not an abrupt hang-up)
-
-Set goal_achieved FALSE if the agent failed the goal, e.g.:
-- Rude, dismissive, or pressuring tone; scarcity tactics on objections
-- Discussed booking but never confirmed; vague "someone will call you" with caller still unsure
-- Collected only partial contact info and ended without booking or callback
-- Unauthorized guarantees, wrong KB/policy answers, or compliance violations
-- Caller needed escalation and agent kept pushing a new sale/booking instead
-- Caller left with no resolution
-
-task_completion: mark each required task true/false based on whether it was reasonably attempted/completed on this call.
-objections: caller pushback only (price, timing, spouse, etc.). Use [] when none — never empty type strings.
-
 JSON only: {"call_id":"${transcript.callId}","goal_achieved":bool,"task_completion":{},"objections":[{"type":"price","handled":bool}],"strengths":["max 3 short strings"],"failures":["max 5 short strings"]}
+Rules: objections = caller pushback only (price, timing, spouse, etc.). Use [] when no objection occurred — never use empty type strings.
 No prose. Short strings only.`;
 }
 
-/** Minimal per-call findings — no raw transcripts. */
 export function compactAnalysesForPatterns(analyses) {
   return analyses.map((a) => ({
     id: a.call_id,
@@ -124,8 +101,6 @@ Rules:
 - "before" MUST be copied verbatim from AGENT_PROMPT (a real paragraph or bullet block).
 - NEVER use placeholders like "Current agent instructions" or "Add explicit instruction to prevent...".
 - "after" MUST be the rewritten replacement for "before", not a meta-instruction about what to add.
-- "after" MUST stay structured: ALL_CAPS section headers on their own line, bullets with "- ", numbered steps with "1. " — never a single escaped line or literal \\n characters.
 - For Temperature: before = current temperature string, after = suggested temperature string.
-- reason must cite call count and IDs when available.
-- The merged optimized prompt will be auto-formatted into sections (PRIMARY GOAL, CONVERSATION FLOW, etc.) for copy-paste.`;
+- reason must cite call count and IDs when available.`;
 }

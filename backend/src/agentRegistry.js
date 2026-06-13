@@ -126,8 +126,3 @@ export function useSampleAgentConfig() {
   return getAgentMeta();
 }
 
-export function useGenericAgentConfig() {
-  activeAgent = createGenericAgentConfig();
-  source = 'generic';
-  return getAgentMeta();
-}
