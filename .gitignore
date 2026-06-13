@@ -20,6 +20,10 @@ brief/
 *.pdf
 Modifications.md
 fixtures/test_transcripts/
+scripts/eval_*.mjs
+scripts/seed_*.mjs
+scripts/randomize_*.mjs
+backend/src/llm/prompts.backup.js
 
 # OS & editor
 .DS_Store
