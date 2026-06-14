@@ -1,3 +1,9 @@
+/**
+ * Disk persistence for optimizer sessions across server restarts.
+ * Snapshots pipeline state, active agent config, and uploaded transcripts to
+ * .optimizer-session.json; restores them on startup via restorePersistedSession.
+ * Exports: savePersistedSession, clearPersistedSession, restorePersistedSession.
+ */
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

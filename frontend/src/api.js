@@ -1,3 +1,8 @@
+/**
+ * HTTP client for backend /api routes.
+ * Wraps fetch with JSON headers, error parsing, and typed helpers for agent,
+ * transcript, pipeline, and LLM endpoints.
+ */
 const BASE = '/api';
 
 async function request(path, options = {}) {

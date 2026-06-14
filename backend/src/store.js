@@ -1,3 +1,9 @@
+/**
+ * In-memory pipeline state for the Voice AI Optimizer server.
+ * Holds evaluation criteria, per-call analyses, patterns, test cases,
+ * recommendations, optimized agent config, and progress between API requests.
+ * Exports: getState, setters for each stage, getPipelineProgress, resetState.
+ */
 const state = {
   evaluationCriteria: null,
   analyses: [],

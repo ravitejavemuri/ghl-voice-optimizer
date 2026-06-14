@@ -1,3 +1,9 @@
+/**
+ * Derives and normalizes config-aspect metadata for the recommendation stage.
+ * Builds the per-agent checklist of reviewable areas (goal, prompt, tools, etc.)
+ * from uploaded JSON so the LLM reviews only fields that exist.
+ * Exports: deriveConfigAspects, normalizeConfigAreaReviews, aspectReviewChecklist.
+ */
 import { categoryDisplayLabel, normalizeCategory } from './recommendCategories.js';
 
 /**

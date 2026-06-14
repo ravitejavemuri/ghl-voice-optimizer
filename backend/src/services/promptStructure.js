@@ -1,6 +1,8 @@
 /**
- * Normalize unstructured or escaped agent prompts into a consistent layout
- * for the Evaluation tab "Optimized prompt" output.
+ * Post-processes optimized agent prompts into a consistent section layout.
+ * Unescapes pasted newlines, isolates known headers, and normalizes lists for
+ * the Evaluation tab "Optimized prompt" output after modifications are applied.
+ * Exports: unescapePromptText, structurePrompt.
  */
 
 const SECTION_HEADERS = [

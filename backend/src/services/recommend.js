@@ -1,3 +1,9 @@
+/**
+ * Pipeline stage 5: produce actionable agent-config modification recommendations.
+ * LLM returns config-area reviews and path-targeted before/after changes, then
+ * validateModifications filters and aligns them with the live agent schema.
+ * Exports: generateRecommendations.
+ */
 import { llmJson, LLM_STEP_MAX_TOKENS } from '../llm/provider.js';
 import { recommendationPrompt } from '../llm/prompts.js';
 import { categoryDisplayLabel, normalizeCategory } from './recommendCategories.js';

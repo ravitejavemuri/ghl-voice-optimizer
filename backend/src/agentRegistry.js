@@ -1,3 +1,9 @@
+/**
+ * Active voice-agent config registry for the optimizer server.
+ * Normalizes uploaded JSON, serves sample/generic defaults, and persists the
+ * current agent across sessions. Used by API routes and the analysis pipeline.
+ * Exports: getActiveAgentConfig, setAgentConfig, parseAgentPayload, snapshot/restore.
+ */
 import { loadFixtures } from './fixtures.js';
 
 let activeAgent = null;

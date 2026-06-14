@@ -1,3 +1,9 @@
+/**
+ * Ollama-native chat completion for JSON-structured pipeline steps.
+ * Calls /api/chat with format:json, optional Qwen3 /no_think prefix, and records
+ * timing/token metrics consistent with the OpenAI provider path.
+ * Exports: ollamaCompleteJson.
+ */
 import { performance } from 'node:perf_hooks';
 import { parseJsonResponse } from './jsonParse.js';
 import { recordLlmMetric } from './llmMetrics.js';

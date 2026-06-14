@@ -1,3 +1,9 @@
+/**
+ * Pipeline stage 3: aggregate per-call analyses into recurring patterns.
+ * Builds an executive summary and asks the LLM for cross-call failure themes,
+ * strengths, and missed opportunities to feed test and recommendation stages.
+ * Exports: detectPatterns, buildExecutiveSummary.
+ */
 import { llmJson, LLM_STEP_MAX_TOKENS } from '../llm/provider.js';
 import { patternDetectionPrompt } from '../llm/prompts.js';
 

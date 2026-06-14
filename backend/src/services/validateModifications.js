@@ -1,3 +1,9 @@
+/**
+ * Validates and aligns LLM-suggested config modifications before apply.
+ * Enforces allowed paths, config-area review flags, non-no-op changes, and
+ * deduplication so only actionable edits reach the optimized agent builder.
+ * Exports: validateModifications, alignModificationsWithReviews.
+ */
 import { categoryDisplayLabel, normalizeCategory } from './recommendCategories.js';
 import {
   categoryForPath,

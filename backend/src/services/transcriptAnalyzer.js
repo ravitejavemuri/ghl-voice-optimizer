@@ -1,3 +1,9 @@
+/**
+ * Pipeline stage 2: per-call transcript evaluation against extracted criteria.
+ * Scores goal achievement, task completion, objections, strengths, and failures;
+ * uses analysis cache and bounded concurrency for multiple calls.
+ * Exports: analyzeTranscript, analyzeAllTranscripts.
+ */
 import { llmJson, LLM_STEP_MAX_TOKENS, resolveTranscriptConcurrency } from '../llm/provider.js';
 import { transcriptAnalyzerPrompt } from '../llm/prompts.js';
 import { getCachedAnalysis, setCachedAnalysis } from './analysisCache.js';

@@ -1,3 +1,9 @@
+/**
+ * Structured disk logging for full pipeline runs.
+ * Writes step timings, per-transcript analyses, and a run manifest under
+ * run_logs/ for debugging and audit (disable via RUN_LOGS=false).
+ * Exports: startRun, logStep, logTranscriptAnalysis, finishRun, failRun.
+ */
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

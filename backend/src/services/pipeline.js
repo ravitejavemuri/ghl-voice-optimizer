@@ -1,3 +1,9 @@
+/**
+ * Orchestrates the full Voice AI Optimizer analysis pipeline.
+ * Runs goal extraction → transcript analysis → pattern detection → test generation
+ * → recommendations → optimized agent build; updates store progress and run logs.
+ * Exports: runFullPipeline.
+ */
 import { performance } from 'node:perf_hooks';
 import { resetLlmMetrics, getLlmMetricsSummary } from '../llm/llmMetrics.js';
 import { extractGoals } from './goalExtraction.js';

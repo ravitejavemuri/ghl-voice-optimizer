@@ -1,4 +1,9 @@
-/** GPT-5 reasoning models offered in the UI (top + balanced tiers). */
+/**
+ * OpenAI model catalog and persisted model selection for the optimizer UI.
+ * Lists GPT-5.x tiers exposed in /api/llm/models and reads/writes the user's
+ * chosen model id to .selected-openai-model on disk.
+ * Exports: OPENAI_MODEL_CATALOG, listOpenAIModelsForApi, setSelectedOpenAIModelId.
+ */
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

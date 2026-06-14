@@ -1,3 +1,9 @@
+/**
+ * Robust JSON parsing for LLM structured-output responses.
+ * Strips thinking tags, extracts fenced or bare objects, and repairs truncated
+ * JSON when models hit token limits mid-response.
+ * Exports: parseJsonResponse, repairTruncatedJson, stripThinking.
+ */
 export function stripThinking(text) {
   return text.replace(/[\s\S]*?<\/think>\s*/gi, '').trim();
 }

@@ -1,4 +1,9 @@
-/** Optimizer LLM prompts (v2). Previous version: prompts.backup.js */
+/**
+ * Prompt templates for each Voice AI Optimizer pipeline LLM stage.
+ * Builds JSON-serialized inputs for goal extraction, transcript scoring, pattern
+ * detection, test generation, and config recommendations (v2; see prompts.backup.js).
+ * Exports: goalExtractionPrompt, transcriptAnalyzerPrompt, patternDetectionPrompt, etc.
+ */
 import { formatTranscriptForLlm } from './transcriptTrim.js';
 import {
   deriveConfigAspects,

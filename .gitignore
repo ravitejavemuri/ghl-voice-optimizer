@@ -22,6 +22,7 @@ brief/
 *.pdf
 Modifications.md
 PERSONAL_PROJECT_REFERENCE.md
+RESPONSIBILITIES_TEAM_OF_ONE.md
 fixtures/test_transcripts/
 scripts/eval_*.mjs
 scripts/seed_*.mjs

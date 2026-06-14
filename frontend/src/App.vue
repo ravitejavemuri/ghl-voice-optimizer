@@ -1,6 +1,14 @@
 <script setup>
+/**
+ * Voice AI Agent Optimizer — single-page dashboard.
+ *
+ * Tabs: Home (setup), Analysis (per-call results), Test Cases, Evaluation (recommendations).
+ * Pipeline orchestration (analyze → progress polling → results) goes through api.js.
+ */
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { api } from './api.js';
+
+// --- State ---
 
 const tab = ref('home');
 const loading = ref(false);
@@ -55,6 +63,8 @@ function tabReady(t) {
   if (t.needs === 'recommendations') return state.value.recommendations != null;
   return true;
 }
+
+// --- Evaluation display helpers ---
 
 function normalizeCategoryKey(category) {
   const c = String(category ?? '')
@@ -339,6 +349,8 @@ const pastePlaceholder = computed(() =>
     : '{ "turns": [{ "speaker": "agent", "text": "..." }] }'
 );
 
+// --- Agent / transcripts ---
+
 function analysisForCall(callId) {
   return state.value.analyses.find((a) => (a.call_id ?? a.callId) === callId) ?? null;
 }
@@ -597,6 +609,8 @@ async function loadSampleTranscripts() {
   }
 }
 
+// --- Pipeline ---
+
 function finishPipelineRun() {
   if (pipelineFinishHandled) return;
   pipelineFinishHandled = true;
@@ -725,6 +739,8 @@ function severityBadge(sev) {
 function formatTaskName(task) {
   return String(task).replace(/_/g, ' ');
 }
+
+// --- Lifecycle ---
 
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'instant' });

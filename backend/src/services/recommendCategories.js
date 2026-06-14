@@ -1,4 +1,9 @@
-/** Canonical recommendation categories for the optimizer. */
+/**
+ * Canonical recommendation category keys and display labels.
+ * Normalizes LLM and UI category strings to stable snake_case keys used by
+ * configPaths, validateModifications, and the recommendations API response.
+ * Exports: RECOMMENDATION_CATEGORIES, normalizeCategory, categoryDisplayLabel.
+ */
 export const RECOMMENDATION_CATEGORIES = [
   'goal',
   'prompt',

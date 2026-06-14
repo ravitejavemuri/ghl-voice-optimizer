@@ -1,3 +1,9 @@
+/**
+ * Loads bundled demo fixtures for the Voice AI Optimizer.
+ * Reads manifest-driven agent config, generic agent, sample transcripts, and
+ * golden examples from ../../fixtures for sample mode and dev smoke tests.
+ * Exports: loadFixtures, stripEvalFields.
+ */
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

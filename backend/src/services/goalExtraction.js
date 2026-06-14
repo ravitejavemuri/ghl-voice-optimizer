@@ -1,3 +1,9 @@
+/**
+ * Pipeline stage 1: derive evaluation criteria from the agent config.
+ * Uses the LLM to extract required tasks, expected behaviors, and success
+ * outcomes that downstream transcript analysis will score against.
+ * Exports: extractGoals.
+ */
 import { llmJson, LLM_STEP_MAX_TOKENS } from '../llm/provider.js';
 import { goalExtractionPrompt } from '../llm/prompts.js';
 

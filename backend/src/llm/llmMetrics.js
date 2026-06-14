@@ -1,3 +1,9 @@
+/**
+ * In-memory LLM usage metrics collected during a pipeline run.
+ * Records per-stage duration, token estimates, and cache hits; summarized at
+ * pipeline completion and included in run logs.
+ * Exports: resetLlmMetrics, recordLlmMetric, getLlmMetricsSummary.
+ */
 const log = [];
 
 export function resetLlmMetrics() {

@@ -1,5 +1,8 @@
 /**
- * Flexible transcript JSON ingestion — accepts many shapes and normalizes to callId + turns.
+ * Flexible transcript JSON ingestion for upload endpoints.
+ * Accepts many vendor/API shapes and normalizes each call to callId, turns,
+ * outcome metadata, and summary fields used by the analysis pipeline.
+ * Exports: parseFlexibleTranscriptJson.
  */
 
 const WRAPPER_KEYS = [

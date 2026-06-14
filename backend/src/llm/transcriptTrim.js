@@ -1,3 +1,9 @@
+/**
+ * Transcript text compaction for LLM transcript-analysis prompts.
+ * Removes filler turns and caps character length so per-call scoring stays within
+ * token budgets without changing upstream stored transcript data.
+ * Exports: formatTranscriptForLlm, isFillerTurn.
+ */
 const MAX_TRANSCRIPT_CHARS = 3000;
 
 const FILLER_PATTERN =

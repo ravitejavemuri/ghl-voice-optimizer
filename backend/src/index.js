@@ -1,3 +1,9 @@
+/**
+ * Express HTTP server for the Voice AI Optimizer.
+ * Exposes REST routes for agent/transcript upload, LLM model selection, pipeline
+ * execution, and session reset; wires registries, store, and persistence on boot.
+ * Entry point: listens on PORT (default 3001) and serves /api/* endpoints.
+ */
 import 'dotenv/config';
 import fs from 'fs';
 import express from 'express';

@@ -1,3 +1,9 @@
+/**
+ * LLM provider abstraction for all pipeline stages.
+ * Resolves OpenAI or Ollama from env, enforces JSON response format, token budgets,
+ * retries on parse/length failures, and records per-call metrics.
+ * Exports: resolveProvider, llmJson, LLM_STEP_MAX_TOKENS, resolveTranscriptConcurrency.
+ */
 import { performance } from 'node:perf_hooks';
 import OpenAI from 'openai/index.mjs';
 import { parseJsonResponse } from './jsonParse.js';

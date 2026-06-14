@@ -1,3 +1,9 @@
+/**
+ * Cleans LLM-reported objection lists from transcript analysis.
+ * Drops empty types and placeholder values ("none", "n/a") so pattern detection
+ * and the UI reflect real caller objections only.
+ * Exports: normalizeObjections.
+ */
 const PLACEHOLDER_OBJECTION_TYPES =
   /^(none|n\/a|no objection|no objections?|no objections? raised?|not applicable)$/i;
 

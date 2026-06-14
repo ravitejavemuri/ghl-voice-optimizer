@@ -1,3 +1,9 @@
+/**
+ * Applies validated recommendation modifications to a copy of the agent config.
+ * Resolves dotted config paths, parses typed after-values, and restructures the
+ * optimized prompt for display. Final step after recommendations in the pipeline.
+ * Exports: applyModifications, buildOptimizedAgentConfig.
+ */
 import { structurePrompt } from './promptStructure.js';
 import { getPath, parseModAfter, setPath } from './configPaths.js';
 

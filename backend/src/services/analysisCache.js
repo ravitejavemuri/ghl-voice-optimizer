@@ -1,3 +1,9 @@
+/**
+ * File-backed cache for per-transcript LLM analysis results.
+ * Keys analyses by transcript content and evaluation criteria hash to skip
+ * redundant calls during re-runs (disable via ANALYSIS_CACHE=false).
+ * Exports: getCachedAnalysis, setCachedAnalysis.
+ */
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';

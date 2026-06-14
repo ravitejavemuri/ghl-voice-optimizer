@@ -1,3 +1,9 @@
+/**
+ * Pipeline stage 4: generate regression test cases from detected failure patterns.
+ * Produces persona/scenario specs with expected behavior and success criteria
+ * so recommendations can be validated against concrete failure targets.
+ * Exports: generateTestCases.
+ */
 import { llmJson, LLM_STEP_MAX_TOKENS } from '../llm/provider.js';
 import { testGeneratorPrompt } from '../llm/prompts.js';
 

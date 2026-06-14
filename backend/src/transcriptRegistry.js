@@ -1,3 +1,9 @@
+/**
+ * Active call-transcript registry for the optimizer server.
+ * Stores uploaded or fixture transcripts, enforces unique callIds, and strips
+ * eval-only fields before serving data to the UI or pipeline.
+ * Exports: getActiveTranscripts, setUploadedTranscripts, getPublicTranscript, snapshot/restore.
+ */
 import { stripEvalFields } from './fixtures.js';
 import { parseFlexibleTranscriptJson } from './transcriptParse.js';
 

@@ -1,3 +1,9 @@
+/**
+ * Dot-path utilities for reading, validating, and writing agent config fields.
+ * Defines which config paths recommendations may target and formats before/after
+ * values for the UI and applyModifications step.
+ * Exports: isValidModPath, getPath, setPath, deriveModifiablePaths, parseModAfter.
+ */
 import { normalizeCategory } from './recommendCategories.js';
 
 const PATH_RE =
