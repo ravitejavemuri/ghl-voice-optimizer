@@ -21,6 +21,7 @@ backend/.optimizer-session.json
 brief/
 *.pdf
 Modifications.md
+PERSONAL_PROJECT_REFERENCE.md
 fixtures/test_transcripts/
 scripts/eval_*.mjs
 scripts/seed_*.mjs

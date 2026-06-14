@@ -16,8 +16,8 @@ The Voice AI Agent Optimizer ingests a **voice agent configuration** (goal + pro
 | Per-call analysis | Goal achievement, task completion, strengths, and failures per call |
 | Recurring patterns | Cross-call failure and strength trends |
 | Test cases | Scenarios targeting observed failure patterns |
-| Recommendations | Before/after prompt changes tied to specific issues |
-| Optimized prompt | Merged agent prompt with recommendations applied |
+| Recommendations | Before/after config changes with keyed JSON display |
+| Optimized agent | Full agent config with validated path modifications applied |
 
 ---
 
@@ -48,7 +48,7 @@ The Voice AI Agent Optimizer ingests a **voice agent configuration** (goal + pro
 | Frontend | Vue 3, Vite, Tailwind CSS |
 | Backend | Express (ES modules) |
 | AI | Configurable LLM provider (`backend/src/llm/provider.js`) |
-| Session state | In-memory (`store.js`) |
+| Session state | In-memory (`store.js`) + disk restore (`sessionPersistence.js`) |
 
 | Path | Role |
 |------|------|
@@ -59,6 +59,10 @@ The Voice AI Agent Optimizer ingests a **voice agent configuration** (goal + pro
 | `backend/src/agentRegistry.js` | Agent config normalization |
 | `backend/src/transcriptRegistry.js` | Transcript upload and storage |
 | `backend/src/transcriptParse.js` | Flexible JSON ingestion |
+| `backend/src/sessionPersistence.js` | Restore/save session across server restarts |
+| `backend/src/services/configPaths.js` | Config path read/write and display formatting |
+| `backend/src/services/validateModifications.js` | Validate LLM modifications against config |
+| `backend/src/services/applyModifications.js` | Apply modifications → optimized agent |
 | `fixtures/` | Sample agent config and demo transcripts |
 
 ---
@@ -128,7 +132,7 @@ Agent config + Transcripts
           ▼                  ▼
 ┌─────────────────┐  ┌──────────────────────┐
 │ 4. Test Case    │  │ 5. Recommendations   │
-│    Generation   │  │    + Optimized Prompt │
+│    Generation   │  │    + Optimized Agent  │
 └─────────────────┘  └──────────────────────┘
 ```
 
@@ -233,31 +237,52 @@ Post-processing normalizes field names, assigns IDs, and wraps output in `{ agen
 
 ---
 
-### Step 5 — Recommendations and optimized prompt
+### Step 5 — Recommendations and optimized agent
 
-**Files:** `recommend.js`, `recommendNormalize.js`, `applyRecommendations.js`
+**Files:** `recommend.js`, `validateModifications.js`, `applyModifications.js`, `configPaths.js`
 
-**LLM output:**
+The LLM receives the **full current agent config** plus failure patterns and test cases. It returns two structures:
+
+1. **`config_area_reviews`** — one review per config aspect (goal, prompt, tools, etc.) with `needs_change` true/false.
+2. **`modifications`** — path-based edits only for aspects where `needs_change` is true.
+
+**LLM output (simplified):**
 ```json
 {
-  "recommendations": [
+  "config_area_reviews": [
+    { "area": "Tools / actions", "needs_change": true, "note": "Tool preconditions need tightening." }
+  ],
+  "modifications": [
     {
-      "id": "rec_1",
+      "id": "mod_1",
+      "path": "tools.check_service_area.description",
       "priority": "High",
-      "category": "Prompt",
-      "issue": "Did not collect contact information",
-      "before": "3. If qualified, collect name, phone, email, and service address.",
-      "after": "3. If qualified, actively request and confirm the caller's full name, phone number, email, and service address.",
-      "reason": "Occurred 5 times in call_003, call_004, call_009",
-      "expected_impact": "Higher contact collection rate"
+      "issue": "No service-area check in 6 failures",
+      "before": "",
+      "after": "Use immediately after greeting when ZIP or address is provided…",
+      "reason": "Failures in call_003, call_004, call_009",
+      "expected_impact": "Forces early eligibility verification"
     }
   ]
 }
 ```
 
-`recommendNormalize.js` anchors each recommendation to verbatim prompt text, deduplicates entries, and drops recommendations that cannot be matched to the source prompt.
+**Modifiable paths** (examples): `goal`, `prompt`, `callScript`, `temperature`, `model`, `voice`, `tools.{id}.description`, `knowledgeBase.{id}.answer`, `guardrails.escalationTriggers`, `guardrails.prohibitedClaims`.
 
-`applyRecommendations.js` merges **Prompt** changes via string replacement, applies **Temperature** updates, and appends **Escalation / Tools / Knowledge Base** blocks. Output is `optimizedAgent` — the input agent structure with updated `prompt` and `temperature`.
+**Validation (`validateModifications.js`):**
+
+- Drops unknown paths, duplicate paths, and mods for aspects marked `needs_change: false`.
+- Sets `before` from the **actual config value at `path`** (ignores incorrect LLM `before` text).
+- Parses `after` (including guardrail JSON arrays and comma-separated fallbacks).
+- Formats before/after as **keyed JSON** for the Evaluation UI (tool id/name, KB question, guardrails object, etc.).
+
+**Apply (`applyModifications.js`):**
+
+- Walks validated modifications in order and writes each `after` value to the path via `setPath()`.
+- Runs `structurePrompt()` on the updated prompt.
+- Output is `optimizedAgent` — the full input agent structure with all accepted path changes applied (not string-replacement merge).
+
+`GET /api/state` is read-only; it does not re-normalize or mutate recommendations after Analyze completes.
 
 ---
 
@@ -282,7 +307,9 @@ Post-processing normalizes field names, assigns IDs, and wraps output in `{ agen
 
 ## 6. Session state
 
-Pipeline results live in in-memory `store.js`. State persists across tab switches within a server session and is cleared when the agent config or transcript batch changes. Server restart resets all state.
+Pipeline results live in in-memory `store.js`. `sessionPersistence.js` writes a snapshot to `backend/.optimizer-session.json` (gitignored) after pipeline and registry updates, and restores it on server startup so a browser refresh or dev-server restart does not lose a completed run.
+
+State is cleared when the user resets the pipeline or changes the agent config / transcript batch in ways that invalidate the current analysis. The selected OpenAI model (footer selector) is persisted separately in `backend/.selected-openai-model`.
 
 ---
 
@@ -294,8 +321,8 @@ Pipeline results live in in-memory `store.js`. State persists across tab switche
 | Per-call analysis | Yes | Normalization, task key fill |
 | Recurring patterns | Yes | `affected_calls`, achievement rate |
 | Test cases | Yes | ID assignment, wrapping |
-| Recommendations | Yes | Anchoring, dedupe, validation |
-| Optimized prompt | — | String merge from recommendations |
+| Recommendations | Yes | Path validation, `before` from config, display formatting |
+| Optimized agent | — | Path-based apply via `setPath()` |
 | Transcript trimming | — | Filler removal, length cap |
 
 ---

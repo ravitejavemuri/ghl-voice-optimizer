@@ -1,21 +1,45 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "recommendation.schema.json",
-  "title": "OptimizationRecommendation",
+  "title": "OptimizationRecommendations",
   "type": "object",
-  "required": ["id", "category", "priority", "before", "after", "reasoning", "expectedImpact", "linkedIssues", "linkedTestIds"],
+  "required": ["agentId", "generatedAt", "configAreaReviews", "recommendations"],
   "properties": {
-    "id": { "type": "string" },
-    "category": {
-      "type": "string",
-      "enum": ["prompt", "temperature", "model", "tools", "knowledge_base", "guardrails"]
+    "agentId": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "frozenAt": { "type": "string", "format": "date-time" },
+    "llmModel": { "type": "string" },
+    "llmModelLabel": { "type": "string" },
+    "configAreaReviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "area", "needs_change", "note"],
+        "properties": {
+          "key": { "type": "string" },
+          "area": { "type": "string" },
+          "needs_change": { "type": "boolean" },
+          "note": { "type": "string" }
+        }
+      }
     },
-    "priority": { "type": "string", "enum": ["high", "medium", "low"] },
-    "before": { "type": "string" },
-    "after": { "type": "string" },
-    "reasoning": { "type": "string" },
-    "expectedImpact": { "type": "string" },
-    "linkedIssues": { "type": "array", "items": { "type": "string" } },
-    "linkedTestIds": { "type": "array", "items": { "type": "string" } }
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "path", "category", "priority", "before", "after", "reason", "expected_impact"],
+        "properties": {
+          "id": { "type": "string" },
+          "path": { "type": "string" },
+          "category": { "type": "string" },
+          "priority": { "type": "string", "enum": ["High", "Medium", "Low"] },
+          "issue": { "type": "string" },
+          "before": { "type": "string" },
+          "after": { "type": "string" },
+          "reason": { "type": "string" },
+          "expected_impact": { "type": "string" }
+        }
+      }
+    }
   }
 }
