@@ -17,6 +17,7 @@ export const api = {
   agent: () => request('/agent'),
   saveAgentFields: (fields) =>
     request('/agent', { method: 'POST', body: JSON.stringify(fields) }),
+  saveAgent: (data) => request('/agent', { method: 'POST', body: JSON.stringify({ data }) }),
   useSampleAgent: () => request('/agent/use-sample', { method: 'POST' }),
   transcripts: () => request('/transcripts'),
   transcript: (callId) => request(`/transcripts/${callId}`),
@@ -31,4 +32,7 @@ export const api = {
   pipelineProgress: () => request('/pipeline/progress'),
   reset: () => request('/reset', { method: 'POST' }),
   runFull: () => request('/run/full', { method: 'POST' }),
+  llmModels: () => request('/llm/models'),
+  setLlmModel: (modelId) =>
+    request('/llm/model', { method: 'POST', body: JSON.stringify({ modelId }) }),
 };

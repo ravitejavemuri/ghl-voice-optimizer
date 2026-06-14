@@ -22,6 +22,7 @@ import {
   clearTranscripts,
 } from './transcriptRegistry.js';
 import { resolveProvider } from './llm/provider.js';
+import { listOpenAIModelsForApi, setSelectedOpenAIModelId } from './llm/modelCatalog.js';
 import { loadFixtures, stripEvalFields } from './fixtures.js';
 import { runFullPipeline } from './services/pipeline.js';
 import {
@@ -29,9 +30,22 @@ import {
   getPipelineProgress,
   setProvider,
   resetState,
+  bindSessionPersistence,
 } from './store.js';
+import { bindAgentSessionPersistence } from './agentRegistry.js';
+import { bindTranscriptSessionPersistence } from './transcriptRegistry.js';
+import { restorePersistedSession, savePersistedSession } from './sessionPersistence.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
+
+function persistSessionSnapshot() {
+  savePersistedSession();
+}
+
+bindSessionPersistence(persistSessionSnapshot);
+bindAgentSessionPersistence(persistSessionSnapshot);
+bindTranscriptSessionPersistence(persistSessionSnapshot);
+restorePersistedSession();
 
 function getProvider() {
   const p = resolveProvider();
@@ -64,6 +78,7 @@ app.get('/api/health', (_req, res) => {
     provider: provider.name,
     model: provider.model,
     modelLabel: provider.modelLabel,
+    modelTier: provider.modelTier ?? null,
     transcriptCount: meta.count,
     transcriptSource: meta.source,
     agentSource: agentMeta.source,
@@ -81,6 +96,43 @@ app.get('/api/health', (_req, res) => {
       'recommendations',
     ],
   });
+});
+
+app.get('/api/llm/models', (_req, res) => {
+  const provider = getProvider();
+  if (provider.name !== 'openai') {
+    return res.json({
+      provider: provider.name,
+      selectable: false,
+      selected: provider.model,
+      selectedLabel: provider.modelLabel,
+      models: [],
+      tiers: [],
+    });
+  }
+  res.json({ ...listOpenAIModelsForApi(), selectable: true });
+});
+
+app.post('/api/llm/model', (req, res) => {
+  try {
+    const provider = getProvider();
+    if (provider.name !== 'openai') {
+      return res.status(400).json({ error: 'Model selection is only available for OpenAI' });
+    }
+    const modelId = req.body?.modelId ?? req.body?.model;
+    const meta = setSelectedOpenAIModelId(modelId);
+    const updated = getProvider();
+    res.json({
+      ok: true,
+      ...listOpenAIModelsForApi(),
+      selectable: true,
+      model: updated.model,
+      modelLabel: updated.modelLabel,
+      modelTier: meta.tier,
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 app.get('/api/agent', (_req, res) => {

@@ -58,6 +58,17 @@
       "linkedTestIds": ["tc_rebate_question"]
     },
     {
+      "id": "rec_model_consistency",
+      "category": "model",
+      "priority": "low",
+      "before": "gpt-4o-mini",
+      "after": "gpt-4o",
+      "reasoning": "Repeated KB inaccuracies and policy violations on complex objection calls suggest a more capable model for guardrail adherence.",
+      "expectedImpact": "Better compliance on edge-case calls without prompt changes.",
+      "linkedIssues": ["kb_inaccuracy", "policy_violation"],
+      "linkedTestIds": ["tc_rebate_question"]
+    },
+    {
       "id": "rec_tools_callback_priority",
       "category": "tools",
       "priority": "medium",

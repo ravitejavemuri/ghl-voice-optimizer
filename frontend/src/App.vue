@@ -15,12 +15,11 @@ const agent = ref(null);
 const agentGoal = ref('');
 const agentPrompt = ref('');
 const agentName = ref('');
-const agentScript = ref('');
-const scriptInput = ref(null);
 const transcripts = ref([]);
 const pasteJson = ref('');
 const isDragging = ref(false);
 const fileInput = ref(null);
+const agentConfigInput = ref(null);
 const state = ref({
   evaluationCriteria: null,
   analyses: [],
@@ -30,10 +29,17 @@ const state = ref({
   optimizedAgent: null,
 });
 
+const LLM_MODEL_STORAGE_KEY = 'optimizer_openai_model';
+
+const llmModels = ref(null);
+const selectedLlmModel = ref('');
+const llmModelLoading = ref(false);
 const selectedCallId = ref(null);
 const selectedTranscript = ref(null);
 const selectedAnalysis = ref(null);
 const selectedRec = ref(null);
+const pipelineStartTab = ref(null);
+let pipelineFinishHandled = false;
 
 const tabs = [
   { id: 'home', label: 'Home', icon: '⌂' },
@@ -50,7 +56,176 @@ function tabReady(t) {
   return true;
 }
 
-const optimizedPrompt = computed(() => state.value.optimizedAgent?.prompt ?? '');
+function normalizeCategoryKey(category) {
+  const c = String(category ?? '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s*\/\s*.*$/, '')
+    .replace(/\s+/g, '_');
+  if (c === 'script' || c === 'flow' || c.startsWith('call')) return 'call_script';
+  if (c === 'objective' || c.startsWith('goal')) return 'goal';
+  if (c.startsWith('prompt')) return 'prompt';
+  if (c === 'escalation' || c === 'guardrail' || c.startsWith('guardrail')) return 'guardrails';
+  if (c.startsWith('knowledge') || c === 'kb' || c === 'faq') return 'knowledge_base';
+  if (c === 'tool' || c.startsWith('tool')) return 'tools';
+  if (c.startsWith('temperature')) return 'temperature';
+  if (c.startsWith('model')) return 'model';
+  if (c.startsWith('voice')) return 'voice';
+  return c;
+}
+
+function recDisplayBefore(rec) {
+  return formatRecModDisplay(rec?.path, rec?.before, agent.value);
+}
+
+function recDisplayAfter(rec) {
+  return formatRecModDisplay(rec?.path, rec?.after, agent.value);
+}
+
+function copyList(value) {
+  return Array.isArray(value) ? [...value] : [];
+}
+
+function formatRecModDisplay(path, rawValue, agentConfig) {
+  const pathStr = String(path ?? '').trim();
+  const text = String(rawValue ?? '');
+  if (!pathStr) return text;
+
+  if (text.trim().startsWith('{') && text.includes(`"${pathStr.split('.')[0]}"`)) {
+    return text;
+  }
+  if (pathStr.startsWith('tools.') && text.includes('"id"') && text.includes('"description"')) {
+    return text;
+  }
+  if (pathStr.startsWith('knowledgeBase.') && text.includes('"id"') && text.includes('"answer"')) {
+    return text;
+  }
+  if (pathStr.startsWith('guardrails.') && text.includes('"escalationTriggers"')) {
+    return text;
+  }
+
+  if (pathStr.startsWith('tools.')) {
+    const [, toolId, field] = pathStr.split('.');
+    const tool = (agentConfig?.tools ?? []).find((t) => t.id === toolId);
+    return JSON.stringify(
+      {
+        id: toolId,
+        name: tool?.name ?? toolId,
+        [field]: text,
+      },
+      null,
+      2
+    );
+  }
+
+  if (pathStr.startsWith('knowledgeBase.')) {
+    const [, entryId, field] = pathStr.split('.');
+    const entry = (agentConfig?.knowledgeBase ?? []).find((e) => e.id === entryId);
+    return JSON.stringify(
+      {
+        id: entryId,
+        question: entry?.question ?? '',
+        [field]: text,
+      },
+      null,
+      2
+    );
+  }
+
+  if (pathStr.startsWith('guardrails.')) {
+    const field = pathStr.split('.')[1];
+    const guardrails = agentConfig?.guardrails ?? {};
+    let items = [];
+    try {
+      const parsed = JSON.parse(text);
+      items = Array.isArray(parsed) ? parsed : parsed?.[field] ?? [];
+    } catch {
+      items = text.includes(',')
+        ? text.split(',').map((item) => item.trim()).filter(Boolean)
+        : text
+          ? [text]
+          : [];
+    }
+    return JSON.stringify(
+      {
+        escalationTriggers:
+          field === 'escalationTriggers' ? items : copyList(guardrails.escalationTriggers),
+        prohibitedClaims:
+          field === 'prohibitedClaims' ? items : copyList(guardrails.prohibitedClaims),
+      },
+      null,
+      2
+    );
+  }
+
+  if (['goal', 'prompt', 'callScript', 'temperature', 'model', 'voice'].includes(pathStr)) {
+    return JSON.stringify({ [pathStr]: text }, null, 2);
+  }
+
+  return text;
+}
+
+const configAreaReviews = computed(
+  () => state.value.recommendations?.configAreaReviews ?? []
+);
+
+function formatEvalTimestamp(iso) {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
+}
+
+function recBeforeLabel(category) {
+  const key = normalizeCategoryKey(category);
+  const labels = {
+    goal: 'In current config (goal)',
+    prompt: 'In current config (prompt)',
+    call_script: 'In current config (call script)',
+    temperature: 'In current config (temperature)',
+    model: 'In current config (model)',
+    voice: 'In current config (voice)',
+    tools: 'In current config (tools)',
+    knowledge_base: 'In current config (KB / FAQ)',
+    guardrails: 'In current config (guardrails)',
+  };
+  return labels[key] ?? 'In current config';
+}
+
+function recAfterLabel(category) {
+  const key = normalizeCategoryKey(category);
+  const labels = {
+    goal: 'In optimized config (goal)',
+    prompt: 'In optimized config (prompt)',
+    call_script: 'In optimized config (call script)',
+    temperature: 'In optimized config (temperature)',
+    model: 'In optimized config (model)',
+    voice: 'In optimized config (voice)',
+    tools: 'In optimized config (tools)',
+    knowledge_base: 'In optimized config (KB / FAQ)',
+    guardrails: 'In optimized config (guardrails)',
+  };
+  return labels[key] ?? 'In optimized config';
+}
+
+function downloadOptimizedAgentConfig() {
+  const raw = state.value.optimizedAgent;
+  if (!raw) return;
+  const { _meta, ...config } = raw;
+  const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const slug = String(config.agentId || config.name || 'optimized_agent')
+    .replace(/[^a-z0-9]+/gi, '_')
+    .replace(/^_|_$/g, '')
+    .toLowerCase();
+  link.href = url;
+  link.download = `${slug || 'optimized_agent'}_config.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 const footerModeLabel = computed(() => 'Voice AI Agent Optimizer');
 
@@ -62,10 +237,64 @@ const footerAgentLabel = computed(() => {
 const footerLlmLabel = computed(() => {
   const label = health.value?.modelLabel || health.value?.model;
   const provider = health.value?.provider;
-  if (label && provider) return `${provider} · ${label}`;
+  if (provider && label) return `${provider} · ${label}`;
   if (label) return label;
   return 'LLM not configured';
 });
+
+const showLlmModelSelect = computed(
+  () =>
+    health.value?.provider === 'openai' &&
+    Boolean(llmModels.value?.selectable ?? llmModels.value?.models?.length)
+);
+
+const topTierModels = computed(
+  () => llmModels.value?.models?.filter((m) => m.tier === 'top') ?? []
+);
+const balancedTierModels = computed(
+  () => llmModels.value?.models?.filter((m) => m.tier === 'balanced') ?? []
+);
+
+async function loadLlmModels() {
+  try {
+    llmModels.value = await api.llmModels();
+    if (llmModels.value?.selectable) {
+      selectedLlmModel.value = llmModels.value.selected;
+    }
+  } catch {
+    llmModels.value = null;
+  }
+}
+
+async function syncSavedLlmModel() {
+  if (health.value?.provider !== 'openai') return;
+  const saved = localStorage.getItem(LLM_MODEL_STORAGE_KEY);
+  if (!saved || saved === llmModels.value?.selected) return;
+  if (!llmModels.value?.models?.some((m) => m.id === saved)) return;
+  try {
+    await api.setLlmModel(saved);
+    localStorage.setItem(LLM_MODEL_STORAGE_KEY, saved);
+  } catch {
+    /* keep server default */
+  }
+}
+
+async function onLlmModelChange() {
+  if (!selectedLlmModel.value || pipelineRunning.value) return;
+  llmModelLoading.value = true;
+  try {
+    const result = await api.setLlmModel(selectedLlmModel.value);
+    llmModels.value = { ...result, selectable: true };
+    selectedLlmModel.value = result.selected;
+    localStorage.setItem(LLM_MODEL_STORAGE_KEY, result.selected);
+    health.value = await api.health();
+  } catch (e) {
+    error.value = e.message;
+    selectedLlmModel.value = llmModels.value?.selected ?? '';
+  } finally {
+    llmModelLoading.value = false;
+  }
+}
 
 const footerTranscriptLabel = computed(() => {
   const count = transcripts.value.length || health.value?.transcriptCount || 0;
@@ -84,8 +313,18 @@ const hasFileTranscripts = computed(() => transcripts.value.length > 0);
 const pasteDisabled = computed(() => hasFileTranscripts.value);
 const fileDropDisabled = computed(() => hasPasteContent.value);
 const hasAgentConfig = computed(
-  () =>
-    Boolean(agentPrompt.value.trim() || agentGoal.value.trim() || agentScript.value.trim())
+  () => Boolean(agentPrompt.value.trim() || agentGoal.value.trim())
+);
+
+const agentTools = computed(() => agent.value?.tools ?? []);
+const agentKnowledgeBase = computed(() => agent.value?.knowledgeBase ?? []);
+const agentGuardrails = computed(() => agent.value?.guardrails ?? {});
+const agentCallScript = computed(() => String(agent.value?.callScript ?? '').trim());
+const agentEscalationTriggers = computed(
+  () => agentGuardrails.value?.escalationTriggers ?? []
+);
+const agentProhibitedClaims = computed(
+  () => agentGuardrails.value?.prohibitedClaims ?? []
 );
 const canAnalyze = computed(
   () =>
@@ -135,6 +374,12 @@ function badgeClass(variant) {
   return `inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 ring-inset ${map[variant] ?? map.info}`;
 }
 
+function syncAgentFormFields(a = {}) {
+  agentGoal.value = a.goal ?? '';
+  agentName.value = a.name ?? '';
+  agentPrompt.value = a.prompt ?? '';
+}
+
 async function refresh() {
   const [h, a, t, s] = await Promise.all([
     api.health(),
@@ -144,11 +389,15 @@ async function refresh() {
   ]);
   health.value = h;
   agent.value = a;
-  agentGoal.value = a.goal ?? '';
-  agentPrompt.value = a.prompt ?? '';
-  agentName.value = a.name ?? '';
+  syncAgentFormFields(a);
   transcripts.value = t;
   state.value = s;
+  await loadLlmModels();
+  if (health.value?.provider === 'openai') {
+    await syncSavedLlmModel();
+    await loadLlmModels();
+    health.value = await api.health();
+  }
   syncSelectedCallView();
 }
 
@@ -269,35 +518,21 @@ async function ensureTranscriptsLoaded() {
   }
 }
 
-function buildPromptForSave() {
-  const base = agentPrompt.value.trim();
-  const script = agentScript.value.trim();
-  if (!script) return base;
-  const block = `--- CALL SCRIPT / FLOW ---\n${script}`;
-  return base ? `${base}\n\n${block}` : block;
-}
-
-async function handleScriptFile(e) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  try {
-    agentScript.value = await file.text();
-    uploadMessage.value = `Loaded script: ${file.name}`;
-  } catch (err) {
-    error.value = err.message;
-  }
-  e.target.value = '';
+function agentPayloadFromForm() {
+  const { _meta, ...current } = agent.value ?? {};
+  return {
+    ...current,
+    name: agentName.value || current.name || 'Voice AI Agent',
+    goal: agentGoal.value || current.goal || "Complete the agent's intended objective on each call.",
+    prompt: agentPrompt.value.trim() || current.prompt || '',
+  };
 }
 
 async function saveAgentFields() {
   loading.value = true;
   error.value = '';
   try {
-    await api.saveAgentFields({
-      name: agentName.value || 'Voice AI Agent',
-      goal: agentGoal.value,
-      prompt: buildPromptForSave(),
-    });
+    await api.saveAgentFields(agentPayloadFromForm());
     await refresh();
     uploadMessage.value = 'Agent configuration saved';
   } catch (e) {
@@ -320,6 +555,33 @@ async function loadSampleAgent() {
   }
 }
 
+function openAgentConfigPicker() {
+  if (!loading.value) agentConfigInput.value?.click();
+}
+
+async function handleAgentConfigFile(e) {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.json')) {
+    error.value = 'Please upload a .json agent config file';
+    return;
+  }
+  loading.value = true;
+  error.value = '';
+  uploadMessage.value = '';
+  try {
+    const data = parseFilesJson(await file.text(), file.name);
+    await api.saveAgent(data);
+    await refresh();
+    uploadMessage.value = `Loaded agent config from ${file.name}`;
+  } catch (err) {
+    error.value = err.message;
+  } finally {
+    loading.value = false;
+  }
+}
+
 async function loadSampleTranscripts() {
   loading.value = true;
   error.value = '';
@@ -335,27 +597,29 @@ async function loadSampleTranscripts() {
   }
 }
 
-function navigateAfterPipelineComplete() {
-  const recs = state.value.recommendations?.recommendations;
-  if (recs?.length) selectedRec.value = recs[0];
-  // Only auto-navigate when the user stayed on Home — respect manual tab picks during a run.
-  if (tab.value === 'home') {
-    tab.value = defaultResultsTab();
-  }
-}
-
-function finishPipelineFromPoll() {
+function finishPipelineRun() {
+  if (pipelineFinishHandled) return;
+  pipelineFinishHandled = true;
   pipelineRunning.value = false;
   stopProgressPoll();
+
   if (pipelineProgress.value?.step === 'error') {
     error.value = pipelineProgress.value.detail;
     sessionNotice.value = hasFileTranscripts.value
       ? `Analysis failed. ${transcripts.value.length} transcript(s) still loaded — fix the issue and click Analyze again.`
       : 'Analysis failed. Upload transcripts and click Analyze to try again.';
+    pipelineStartTab.value = null;
     return;
   }
-  sessionNotice.value = '';
-  navigateAfterPipelineComplete();
+
+  sessionNotice.value = 'Analysis complete — open Evaluation to review recommended config changes.';
+  const recs = state.value.recommendations?.recommendations;
+  if (recs?.length) selectedRec.value = recs[0];
+
+  if (pipelineStartTab.value === 'home' && tab.value === 'home') {
+    tab.value = defaultResultsTab();
+  }
+  pipelineStartTab.value = null;
 }
 
 function startProgressPoll() {
@@ -366,7 +630,7 @@ function startProgressPoll() {
       if (!pipelineProgress.value.running) {
         if (pipelineRunning.value) {
           await refresh();
-          finishPipelineFromPoll();
+          finishPipelineRun();
         }
         return;
       }
@@ -389,7 +653,7 @@ async function analyzeAndRun() {
   uploadMessage.value = '';
   sessionNotice.value = '';
   if (!hasAgentConfig.value) {
-    error.value = 'Add an agent prompt, goal, or call script before analyzing.';
+    error.value = 'Add an agent prompt or goal before analyzing.';
     return;
   }
   if (!(hasFileTranscripts.value || hasPasteContent.value)) {
@@ -399,11 +663,7 @@ async function analyzeAndRun() {
   if (!(await ensureTranscriptsLoaded())) return;
   loading.value = true;
   try {
-    await api.saveAgentFields({
-      name: agentName.value || 'Voice AI Agent',
-      goal: agentGoal.value || "Complete the agent's intended objective on each call.",
-      prompt: buildPromptForSave(),
-    });
+    await api.saveAgentFields(agentPayloadFromForm());
     await refresh();
   } catch (e) {
     error.value = e.message;
@@ -415,6 +675,8 @@ async function analyzeAndRun() {
 }
 
 async function run() {
+  pipelineFinishHandled = false;
+  pipelineStartTab.value = tab.value;
   pipelineRunning.value = true;
   pipelineProgress.value = {
     running: true,
@@ -427,19 +689,18 @@ async function run() {
   try {
     await api.runFull();
     await refresh();
-    navigateAfterPipelineComplete();
-    sessionNotice.value = '';
   } catch (e) {
     error.value = e.message;
   } finally {
     try {
       pipelineProgress.value = await api.pipelineProgress();
       await refresh();
-      finishPipelineFromPoll();
+      finishPipelineRun();
     } catch {
       pipelineProgress.value = null;
       pipelineRunning.value = false;
       stopProgressPoll();
+      pipelineStartTab.value = null;
     }
   }
 }
@@ -495,9 +756,15 @@ function switchTab(id) {
   tab.value = id;
 }
 
-watch(tab, async () => {
+watch(tab, async (id) => {
   await nextTick();
   scrollToTop();
+  if (id === 'evaluation') {
+    const recs = state.value.recommendations?.recommendations;
+    if (recs?.length && !selectedRec.value) {
+      selectedRec.value = recs[0];
+    }
+  }
 });
 
 function defaultResultsTab() {
@@ -536,15 +803,13 @@ onMounted(async () => {
     }
 
     if (hasPartialRun || progress.step === 'error') {
-      await api.reset();
-      await refresh();
       if (hasFileTranscripts.value) {
         sessionNotice.value = `Previous run was interrupted. ${transcripts.value.length} transcript(s) still loaded — click Analyze to run again.`;
       } else {
         sessionNotice.value =
           'Previous run was interrupted. Upload transcripts or paste JSON, then click Analyze.';
       }
-      tab.value = 'home';
+      tab.value = state.value.analyses.length ? 'analysis' : 'home';
       return;
     }
 
@@ -773,7 +1038,10 @@ onMounted(async () => {
             <!-- Agent panel -->
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <h3 class="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-400">Voice agent config</h3>
-              <p class="mb-4 text-xs text-slate-500">Used to extract goals and evaluate each call against your script.</p>
+              <p class="mb-4 text-xs text-slate-500">
+                Used to extract goals and evaluate each call. Load sample or upload JSON to populate the full config
+                (tools, KB, guardrails, model, temperature)
+              </p>
               <label class="mb-1 block text-xs font-medium text-slate-600">Agent name</label>
               <input
                 v-model="agentName"
@@ -794,22 +1062,128 @@ onMounted(async () => {
                 class="mb-3 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
                 placeholder="Paste the system prompt, policies, and instructions…"
               />
-              <label class="mb-1 block text-xs font-medium text-slate-600">Call script / flow (optional)</label>
-              <textarea
-                v-model="agentScript"
-                rows="4"
-                class="mb-3 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                placeholder="Objection handling, qualification steps, closing script…"
-              />
+
+              <div
+                v-if="agent"
+                class="mb-4 max-h-[28rem] space-y-3 overflow-y-auto rounded-xl border border-slate-100 bg-slate-50/80 p-3"
+                @wheel.stop
+              >
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Loaded config</p>
+
+                <div class="rounded-lg border border-slate-200 bg-white p-3">
+                  <p class="text-xs font-medium text-slate-600">Model &amp; settings</p>
+                  <dl class="mt-2 grid gap-2 text-xs sm:grid-cols-2">
+                    <div v-if="agent.agentId">
+                      <dt class="text-slate-400">Agent ID</dt>
+                      <dd class="font-mono text-slate-700">{{ agent.agentId }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-slate-400">Model</dt>
+                      <dd class="text-slate-700">{{ agent.model || '—' }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-slate-400">Temperature</dt>
+                      <dd class="text-slate-700">{{ agent.temperature ?? '—' }}</dd>
+                    </div>
+                    <div v-if="agent.voice">
+                      <dt class="text-slate-400">Voice</dt>
+                      <dd class="text-slate-700">{{ agent.voice }}</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div v-if="agentCallScript" class="rounded-lg border border-slate-200 bg-white p-3">
+                  <p class="text-xs font-medium text-slate-600">Call script / flow</p>
+                  <pre
+                    class="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-slate-700"
+                    >{{ agentCallScript }}</pre
+                  >
+                </div>
+
+                <div v-if="agentTools.length" class="rounded-lg border border-slate-200 bg-white p-3">
+                  <p class="text-xs font-medium text-slate-600">Tools ({{ agentTools.length }})</p>
+                  <ul class="mt-2 space-y-2">
+                    <li
+                      v-for="tool in agentTools"
+                      :key="tool.id"
+                      class="rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-xs"
+                    >
+                      <div class="flex flex-wrap items-center gap-2">
+                        <strong class="text-slate-800">{{ tool.name }}</strong>
+                        <span class="font-mono text-[10px] text-slate-400">{{ tool.id }}</span>
+                        <span
+                          :class="
+                            badgeClass(tool.enabled !== false ? 'success' : 'info')
+                          "
+                        >
+                          {{ tool.enabled !== false ? 'enabled' : 'disabled' }}
+                        </span>
+                      </div>
+                      <p v-if="tool.description" class="mt-1 text-slate-600">{{ tool.description }}</p>
+                    </li>
+                  </ul>
+                </div>
+
+                <div v-if="agentKnowledgeBase.length" class="rounded-lg border border-slate-200 bg-white p-3">
+                  <p class="text-xs font-medium text-slate-600">
+                    Knowledge base ({{ agentKnowledgeBase.length }})
+                  </p>
+                  <ul class="mt-2 space-y-2">
+                    <li
+                      v-for="entry in agentKnowledgeBase"
+                      :key="entry.id"
+                      class="rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-xs"
+                    >
+                      <p class="font-medium text-slate-800">Q: {{ entry.question || entry.id }}</p>
+                      <p class="mt-1 text-slate-600">A: {{ entry.answer }}</p>
+                    </li>
+                  </ul>
+                </div>
+
+                <div
+                  v-if="agentEscalationTriggers.length || agentProhibitedClaims.length"
+                  class="rounded-lg border border-slate-200 bg-white p-3"
+                >
+                  <p class="text-xs font-medium text-slate-600">Guardrails</p>
+                  <div v-if="agentEscalationTriggers.length" class="mt-2">
+                    <p class="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                      Escalation triggers
+                    </p>
+                    <ul class="mt-1 list-disc space-y-1 pl-4 text-xs text-slate-700">
+                      <li v-for="(item, idx) in agentEscalationTriggers" :key="`esc-${idx}`">
+                        {{ item }}
+                      </li>
+                    </ul>
+                  </div>
+                  <div v-if="agentProhibitedClaims.length" class="mt-3">
+                    <p class="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                      Prohibited claims
+                    </p>
+                    <ul class="mt-1 list-disc space-y-1 pl-4 text-xs text-slate-700">
+                      <li v-for="(item, idx) in agentProhibitedClaims" :key="`claim-${idx}`">
+                        {{ item }}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               <div class="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                  @click="scriptInput?.click()"
+                  class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                  :disabled="loading"
+                  @click="openAgentConfigPicker"
                 >
-                  Upload script file
+                  Upload agent config
                 </button>
-                <input ref="scriptInput" type="file" accept=".txt,.md,.json,text/*" hidden @change="handleScriptFile" />
+                <input
+                  ref="agentConfigInput"
+                  type="file"
+                  accept=".json,application/json"
+                  hidden
+                  @change="handleAgentConfigFile"
+                />
                 <button
                   class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
                   :disabled="loading"
@@ -1083,38 +1457,56 @@ onMounted(async () => {
             v-if="!state.recommendations"
             class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400 shadow-sm"
           >
-            Run Analyze to generate optimization recommendations and a validation plan.
+            Run Analyze to generate optimization recommendations and a downloadable agent config.
           </div>
           <template v-else>
-            <div class="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 shadow-sm">
-              <h2 class="text-base font-semibold text-slate-900">Validate on your voice agent</h2>
-              <p class="mt-2 text-sm text-slate-600">
-                Apply the optimized prompt below in your voice agent, then call the agent for each test scenario on the
-                <strong>Test Cases</strong> tab. Re-upload new call transcripts here to measure improvement.
+            <div
+              v-if="state.recommendations?.frozenAt"
+              class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600 shadow-sm"
+            >
+              <p class="font-medium text-slate-800">Frozen evaluation</p>
+              <p class="mt-1 text-xs leading-relaxed">
+                This output was generated
+                {{ formatEvalTimestamp(state.recommendations.generatedAt) }}
+                with
+                <strong>{{
+                  state.recommendations.llmModelLabel || state.recommendations.llmModel
+                }}</strong>.
+                It stays fixed until you re-run Analyze.
               </p>
-              <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm text-slate-700">
-                <li>Copy the optimized prompt into your voice agent settings.</li>
-                <li>Save and publish the updated agent configuration.</li>
-                <li>Call your agent's phone number — role-play each scenario from the Test Cases tab.</li>
-                <li>Check success criteria during the live call (see Test Cases tab).</li>
-                <li>Export new call logs and re-run Analyze to measure improvement.</li>
-              </ol>
+              <p
+                v-if="health?.modelLabel && health.model !== state.recommendations.llmModel"
+                class="mt-2 text-xs leading-relaxed text-slate-500"
+              >
+                Footer is set to <strong>{{ health.modelLabel }}</strong> — that model will be used
+                on the next Analyze, not retroactively for this evaluation.
+              </p>
             </div>
 
-            <div v-if="optimizedPrompt" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 class="mb-2 text-sm font-semibold text-slate-700">Optimized prompt (copy into your voice agent)</h3>
-              <p class="mb-3 text-xs text-slate-500">
-                Structured for copy-paste — sections, bullets, and line breaks are normalized even if your original prompt was one block or used literal \\n characters.
-              </p>
-              <p v-if="state.optimizedAgent?.temperature != null" class="mb-3 text-xs text-slate-500">
-                Suggested temperature: {{ state.optimizedAgent.temperature }}
-              </p>
-              <div
-                class="max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs break-words whitespace-pre-wrap text-slate-700"
-                @wheel="scrollChainWheel"
-              >
-                {{ optimizedPrompt }}
+            <div class="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 shadow-sm">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 class="text-base font-semibold text-slate-900">Apply optimized agent config</h2>
+                  <p class="mt-2 text-sm text-slate-600">
+                    The LLM reviews each aspect of your uploaded agent config, then applies suggested
+                    changes to the downloadable optimized JSON.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="shrink-0 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700 disabled:opacity-50"
+                  :disabled="!state.optimizedAgent"
+                  @click="downloadOptimizedAgentConfig"
+                >
+                  Download optimized config
+                </button>
               </div>
+              <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm text-slate-700">
+                <li>Review each recommended change below (prompt excerpt, temperature, model, tools, KB, guardrails).</li>
+                <li>Download the optimized agent JSON and upload it to your voice agent.</li>
+                <li>Role-play each scenario from the <strong>Test Cases</strong> tab against your live agent.</li>
+                <li>Re-upload new call transcripts and re-run Analyze to measure improvement.</li>
+              </ol>
             </div>
 
             <div
@@ -1136,6 +1528,35 @@ onMounted(async () => {
                     <span :class="badgeClass('warning')">{{ tc.failure_target }}</span>
                   </div>
                   <p class="mt-1 text-xs text-slate-500">{{ tc.scenario }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-if="configAreaReviews.length"
+              class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              <h3 class="mb-1 text-sm font-semibold text-slate-700">Config area review</h3>
+              <p class="mb-4 text-xs text-slate-500">
+                One review per aspect found in your uploaded agent config (varies by upload).
+              </p>
+              <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <div
+                  v-for="review in configAreaReviews"
+                  :key="review.area"
+                  class="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5"
+                >
+                  <div class="flex flex-wrap items-center gap-2">
+                    <strong class="text-xs text-slate-800">{{ review.area }}</strong>
+                    <span
+                      :class="
+                        badgeClass(review.needs_change ? 'warning' : 'success')
+                      "
+                    >
+                      {{ review.needs_change ? 'change suggested' : 'no change' }}
+                    </span>
+                  </div>
+                  <p class="mt-1 text-xs leading-relaxed text-slate-600">{{ review.note }}</p>
                 </div>
               </div>
             </div>
@@ -1170,29 +1591,37 @@ onMounted(async () => {
                   {{ selectedRec.category }} · {{ selectedRec.priority }} priority
                 </h2>
                 <p v-if="selectedRec.issue" class="mt-2 text-sm font-medium text-slate-800">{{ selectedRec.issue }}</p>
+                <p v-if="selectedRec.path" class="mt-1 font-mono text-[11px] text-slate-400">
+                  {{ selectedRec.path }}
+                </p>
                 <p class="mt-2 text-sm text-slate-600">{{ selectedRec.reason }}</p>
                 <p class="mt-3 text-sm text-slate-600">
                   <strong>Expected impact:</strong> {{ selectedRec.expected_impact }}
                 </p>
+                <p class="mt-4 text-xs text-slate-500">
+                  Before and after are exact config values at the path shown above — applied to the download.
+                </p>
                 <div class="mt-5 grid gap-4 lg:grid-cols-2">
                   <div class="min-w-0">
-                    <h4 class="mb-1 text-xs font-semibold uppercase tracking-wide text-rose-500">Before</h4>
-                    <p class="mb-2 text-xs text-slate-500">Exact excerpt from your current agent prompt</p>
+                    <h4 class="mb-1 text-xs font-semibold uppercase tracking-wide text-rose-500">
+                      {{ recBeforeLabel(selectedRec.category) }}
+                    </h4>
                     <div
                       class="max-h-60 overflow-y-auto rounded-xl border-l-4 border-rose-400 bg-slate-50 p-4 font-mono text-xs break-words whitespace-pre-wrap text-slate-700"
                       @wheel="scrollChainWheel"
                     >
-                      {{ selectedRec.before }}
+                      {{ recDisplayBefore(selectedRec) }}
                     </div>
                   </div>
                   <div class="min-w-0">
-                    <h4 class="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-500">After</h4>
-                    <p class="mb-2 text-xs text-slate-500">Replacement text for that excerpt (also merged into Optimized prompt above)</p>
+                    <h4 class="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-500">
+                      {{ recAfterLabel(selectedRec.category) }}
+                    </h4>
                     <div
                       class="max-h-60 overflow-y-auto rounded-xl border-l-4 border-emerald-400 bg-slate-50 p-4 font-mono text-xs break-words whitespace-pre-wrap text-slate-700"
                       @wheel="scrollChainWheel"
                     >
-                      {{ selectedRec.after }}
+                      {{ recDisplayAfter(selectedRec) }}
                     </div>
                   </div>
                 </div>
@@ -1215,8 +1644,29 @@ onMounted(async () => {
             <span class="hidden text-slate-300 sm:inline" aria-hidden="true">·</span>
             <span>{{ footerAgentLabel }}</span>
           </div>
-          <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-400">
+          <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-slate-400">
             <span>{{ footerLlmLabel }}</span>
+            <template v-if="showLlmModelSelect">
+              <label class="sr-only" for="llm-model-select">OpenAI model</label>
+              <select
+                id="llm-model-select"
+                v-model="selectedLlmModel"
+                class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:opacity-50"
+                :disabled="llmModelLoading || pipelineRunning"
+                @change="onLlmModelChange"
+              >
+                <optgroup label="Top">
+                  <option v-for="m in topTierModels" :key="m.id" :value="m.id">
+                    {{ m.label }}
+                  </option>
+                </optgroup>
+                <optgroup label="Balanced">
+                  <option v-for="m in balancedTierModels" :key="m.id" :value="m.id">
+                    {{ m.label }}
+                  </option>
+                </optgroup>
+              </select>
+            </template>
             <span class="text-slate-300" aria-hidden="true">·</span>
             <span>{{ footerTranscriptLabel }}</span>
             <template v-if="footerAnalysisLabel">

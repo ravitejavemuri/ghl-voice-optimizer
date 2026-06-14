@@ -1,9 +1,29 @@
 import { llmJson, LLM_STEP_MAX_TOKENS } from '../llm/provider.js';
 import { recommendationPrompt } from '../llm/prompts.js';
-import { normalizeRecommendations } from './recommendNormalize.js';
+import { categoryDisplayLabel, normalizeCategory } from './recommendCategories.js';
+import { normalizeConfigAreaReviews } from './agentConfigAspects.js';
+import {
+  alignModificationsWithReviews,
+  validateModifications,
+} from './validateModifications.js';
 
 const SYSTEM =
-  'You recommend Voice AI agent optimizations. Respond with valid JSON only. Use exact prompt excerpts for before/after.';
+  'Return valid JSON only. config_area_reviews: one entry per config aspect. modifications ONLY for aspects where needs_change is true. Each modification needs path, before (exact current value), after, issue, reason, expected_impact. No placeholders.';
+
+function mapRawModifications(result) {
+  const raw = result?.modifications ?? result?.recommendations ?? [];
+  return (raw ?? []).map((m, i) => ({
+    id: m.id ?? `mod_${i + 1}`,
+    path: m.path ?? '',
+    priority: m.priority ?? 'Medium',
+    category: m.category ?? '',
+    issue: m.issue ?? '',
+    before: m.before ?? '',
+    after: m.after ?? '',
+    reason: m.reason ?? m.reasoning ?? '',
+    expected_impact: m.expected_impact ?? m.expectedImpact ?? '',
+  }));
+}
 
 export async function generateRecommendations(provider, agentConfig, patterns, testCases) {
   const result = await llmJson(
@@ -13,31 +33,25 @@ export async function generateRecommendations(provider, agentConfig, patterns, t
     { stage: 'recommendations', maxTokens: LLM_STEP_MAX_TOKENS.recommend }
   );
 
-  if (!result.recommendations?.length) {
-    throw new Error('AI did not return any recommendations');
-  }
+  const configAreaReviews = normalizeConfigAreaReviews(result.config_area_reviews, agentConfig);
+  const validated = validateModifications(mapRawModifications(result), agentConfig, configAreaReviews);
+  const recommendations = alignModificationsWithReviews(validated, configAreaReviews);
 
-  const mapped = result.recommendations.map((r, i) => ({
-    id: r.id ?? `rec_${i + 1}`,
-    priority: r.priority ?? 'Medium',
-    category: r.category ?? 'Prompt',
-    issue: r.issue ?? '',
-    before: r.before ?? '',
-    after: r.after ?? '',
-    reason: r.reason ?? r.reasoning ?? '',
-    expected_impact: r.expected_impact ?? r.expectedImpact ?? '',
-  }));
-
-  const recommendations = normalizeRecommendations(mapped, agentConfig);
   if (!recommendations.length) {
     throw new Error(
-      'AI returned no actionable recommendations with concrete prompt excerpts. Re-run Analyze.'
+      'AI returned no actionable modifications with valid config paths. Re-run Analyze.'
     );
   }
 
   return {
     agentId: agentConfig.agentId,
     generatedAt: new Date().toISOString(),
+    frozenAt: new Date().toISOString(),
+    llmModel: provider.model,
+    llmModelLabel: provider.modelLabel ?? provider.model,
+    configAreaReviews,
     recommendations,
   };
 }
+
+export { alignModificationsWithReviews as alignRecommendationsWithReviews };

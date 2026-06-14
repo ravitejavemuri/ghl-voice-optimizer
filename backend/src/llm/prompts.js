@@ -1,5 +1,11 @@
 /** Optimizer LLM prompts (v2). Previous version: prompts.backup.js */
 import { formatTranscriptForLlm } from './transcriptTrim.js';
+import {
+  deriveConfigAspects,
+  aspectReviewChecklist,
+  aspectCategoryEnum,
+} from '../services/agentConfigAspects.js';
+import { deriveModifiablePaths } from '../services/configPaths.js';
 
 const MAX_GOAL_PROMPT = 1800;
 const MAX_GOAL_SCRIPT = 800;
@@ -87,45 +93,41 @@ Rules: 3-4 tests from failures only; every test MUST include at least 2 success_
 }
 
 export function recommendationPrompt(agentConfig, patterns, testCases) {
-  const agentPrompt = agentConfig.prompt ?? '';
-  return `Recommend Voice AI agent improvements from recurring call failures.
+  const aspects = deriveConfigAspects(agentConfig);
+  const modifiablePaths = deriveModifiablePaths(agentConfig);
+  const configJson = JSON.stringify(agentConfig);
 
-AGENT_PROMPT (copy "before" excerpts verbatim from here):
-"""
-${agentPrompt.slice(0, 2500)}
-"""
+  const aspectList = aspects.map((a, i) => `${i + 1}. ${a.label} (${a.key})`).join('\n');
+  const pathList = modifiablePaths.map((p) => `- ${p}`).join('\n');
 
-AGENT_GOAL: ${(agentConfig.goal ?? '').slice(0, 400)}
-MODEL: ${agentConfig.model ?? ''}  TEMPERATURE: ${agentConfig.temperature ?? ''}
-TOOLS: ${JSON.stringify(agentConfig.tools?.map((tool) => tool.id) ?? [])}
+  return `Produce Evaluation tab JSON from call failures.
 
-RECURRING_FAILURES:
-${JSON.stringify(patterns?.recurring_failures ?? [], null, 2)}
+Aspects (${aspects.length} config_area_reviews):
+${aspectList}
 
-GENERATED_TESTS:
-${JSON.stringify(testCases?.testCases ?? testCases ?? [], null, 2)}
+Checks:
+${aspectReviewChecklist(aspects)}
 
-Return JSON only:
-{
-  "recommendations": [{
-    "id": "rec_1",
-    "priority": "High" | "Medium" | "Low",
-    "category": "Prompt" | "Temperature" | "Tools" | "Knowledge Base" | "Escalation",
-    "issue": "short failure label",
-    "before": "exact verbatim excerpt from AGENT_PROMPT",
-    "after": "full replacement text for that excerpt",
-    "reason": "cite frequency and affected call IDs",
-    "expected_impact": "specific improvement expected"
-  }]
-}
+SYNC: needs_change true → ≥1 modification on a path in that category. needs_change false → ZERO modifications for that category.
+
+Modifiable paths (use exactly these path strings):
+${pathList}
 
 Rules:
-- 3-6 recommendations, each tied to one recurring failure.
-- "before" MUST be copied verbatim from AGENT_PROMPT (a real paragraph or bullet block).
-- NEVER use placeholders like "Current agent instructions" or "Add explicit instruction to prevent...".
-- "after" MUST be the rewritten replacement for "before", not a meta-instruction about what to add.
-- "after" MUST stay structured: ALL_CAPS section headers on their own line, bullets with "- ", numbered steps with "1. " — never a single escaped line or literal \\n characters.
-- For Temperature: before = current temperature string, after = suggested temperature string.
-- reason must cite call count and IDs when available.
-- The merged optimized prompt will be auto-formatted into sections (PRIMARY GOAL, CONVERSATION FLOW, etc.) for copy-paste.`;
+- before MUST equal the current value at path in CURRENT_AGENT_CONFIG (copy exactly).
+- after is the new value at that path (string or number for scalar paths).
+- guardrails.escalationTriggers and guardrails.prohibitedClaims: after MUST be a JSON array string, e.g. ["item one","item two"]. Never plain comma-separated text.
+- tools.*.description: include a modification when tool usage failures appear in FAILURES.
+- knowledgeBase.*.answer: include a modification when KB retrieval or wrong-answer failures appear in FAILURES.
+- One modification per path.
+- issue/reason cite failure frequency and call IDs where possible.
+
+CURRENT_AGENT_CONFIG:
+${configJson}
+
+FAILURES: ${JSON.stringify(patterns?.recurring_failures ?? [])}
+TESTS: ${JSON.stringify(testCases?.testCases ?? testCases ?? [])}
+
+JSON only: {"config_area_reviews":[{"area":"...","needs_change":true,"note":"..."}],"modifications":[{"id":"mod_1","path":"goal","before":"...","after":"...","priority":"High","issue":"...","reason":"...","expected_impact":"..."}]}
+Categories for issue context: ${aspectCategoryEnum(aspects)} | exactly ${aspects.length} reviews | no placeholders`;
 }

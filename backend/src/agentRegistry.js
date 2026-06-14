@@ -51,12 +51,14 @@ export function normalizeAgentConfig(raw) {
   }));
 
   const guardrails = data.guardrails ?? data.policies ?? {};
+  const callScript = String(data.callScript ?? data.call_script ?? data.flow ?? '').trim();
 
   return {
     agentId: data.agentId ?? data.agent_id ?? data.id ?? 'custom_agent',
     name: data.name ?? data.agentName ?? 'Voice AI Agent',
     goal: String(goal).trim(),
     prompt: String(prompt).trim() || String(goal).trim(),
+    callScript,
     model: data.model ?? 'unknown',
     temperature: typeof data.temperature === 'number' ? data.temperature : 0.7,
     voice: data.voice ?? '',
@@ -116,6 +118,7 @@ export function getAgentMeta() {
 export function setAgentConfig(config) {
   activeAgent = { ...config, _meta: { source: 'uploaded' } };
   source = 'uploaded';
+  touchAgentSession();
   return getAgentMeta();
 }
 
@@ -123,6 +126,35 @@ export function useSampleAgentConfig() {
   const { agentConfig } = loadFixtures();
   activeAgent = { ...agentConfig, _meta: { source: 'sample' } };
   source = 'sample';
+  touchAgentSession();
   return getAgentMeta();
+}
+
+let persistSession = () => {};
+
+export function bindAgentSessionPersistence(saveFn) {
+  persistSession = typeof saveFn === 'function' ? saveFn : () => {};
+}
+
+function touchAgentSession() {
+  try {
+    persistSession();
+  } catch {
+    /* best-effort */
+  }
+}
+
+export function snapshotAgentSession() {
+  getActiveAgentConfig();
+  return {
+    source,
+    config: activeAgent ? { ...activeAgent } : null,
+  };
+}
+
+export function restoreAgentSession(saved) {
+  if (!saved?.config) return;
+  activeAgent = saved.config;
+  source = saved.source ?? 'uploaded';
 }
 

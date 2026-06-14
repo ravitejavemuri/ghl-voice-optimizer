@@ -13,6 +13,8 @@ backend/.env
 # Dev/runtime artifacts (regenerated during local runs)
 backend/analysis_cache/
 backend/run_logs/
+backend/.selected-openai-model
+backend/.optimizer-session.json
 *.log
 
 # Kept on disk for your reference — not submitted to GitHub

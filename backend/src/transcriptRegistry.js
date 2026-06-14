@@ -64,6 +64,7 @@ export function setUploadedTranscripts(transcripts, fileNames = []) {
     uploadedAt: new Date().toISOString(),
   };
 
+  touchTranscriptSession();
   return getTranscriptMeta();
 }
 
@@ -83,6 +84,7 @@ export function appendUploadedTranscripts(transcripts, fileNames = []) {
     uploadedAt: new Date().toISOString(),
   };
 
+  touchTranscriptSession();
   return getTranscriptMeta();
 }
 
@@ -90,7 +92,38 @@ export function clearTranscripts() {
   activeTranscripts = [];
   source = 'empty';
   uploadMeta = { fileNames: [], uploadedAt: null };
+  touchTranscriptSession();
   return getTranscriptMeta();
+}
+
+let persistSession = () => {};
+
+export function bindTranscriptSessionPersistence(saveFn) {
+  persistSession = typeof saveFn === 'function' ? saveFn : () => {};
+}
+
+function touchTranscriptSession() {
+  try {
+    persistSession();
+  } catch {
+    /* best-effort */
+  }
+}
+
+export function snapshotTranscriptSession() {
+  return {
+    source,
+    count: activeTranscripts.length,
+    transcripts: activeTranscripts,
+    uploadMeta,
+  };
+}
+
+export function restoreTranscriptSession(saved) {
+  if (!saved?.transcripts?.length) return;
+  activeTranscripts = saved.transcripts;
+  source = saved.source ?? 'uploaded';
+  uploadMeta = saved.uploadMeta ?? { fileNames: [], uploadedAt: null };
 }
 
 export function getPublicTranscript(callId) {

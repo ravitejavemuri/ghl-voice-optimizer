@@ -3,6 +3,7 @@ import OpenAI from 'openai/index.mjs';
 import { parseJsonResponse } from './jsonParse.js';
 import { ollamaCompleteJson } from './ollamaChat.js';
 import { recordLlmMetric } from './llmMetrics.js';
+import { getSelectedOpenAIModelId, getSelectedOpenAIModelMeta } from './modelCatalog.js';
 
 function envInt(name, fallback) {
   const raw = process.env[name];
@@ -17,6 +18,42 @@ function envBool(name, fallback) {
   return ['1', 'true', 'yes', 'on'].includes(String(raw).toLowerCase());
 }
 
+function usesMaxCompletionTokens(model) {
+  return /^(gpt-5|o[0-9])/i.test(String(model ?? ''));
+}
+
+/** Total max_completion_tokens for GPT-5/o — must fit reasoning + visible JSON. */
+const REASONING_MODEL_TOTAL_BUDGET = {
+  goal_extraction: 4096,
+  transcript_analysis: 4096,
+  pattern_detection: 4096,
+  test_generation: 6144,
+  recommendations: 16384,
+};
+
+function resolveTokenLimit(model, maxTokens, stage) {
+  if (!usesMaxCompletionTokens(model)) {
+    return { max_tokens: maxTokens ?? 1024 };
+  }
+  const total = REASONING_MODEL_TOTAL_BUDGET[stage] ?? Math.max(maxTokens ?? 2048, 4096);
+  return { max_completion_tokens: total };
+}
+
+function openAiRequestOptions(model, callOptions = {}) {
+  const opts = {
+    model,
+    response_format: { type: 'json_object' },
+    ...resolveTokenLimit(model, callOptions.maxTokens, callOptions.stage),
+  };
+  if (usesMaxCompletionTokens(model)) {
+    // No internal reasoning burn for structured JSON on GPT-5.x
+    opts.reasoning_effort = callOptions.reasoningEffort ?? 'none';
+  } else {
+    opts.temperature = 0.1;
+  }
+  return opts;
+}
+
 function buildOpenAIJsonClient({ apiKey, model }) {
   const client = new OpenAI({ apiKey, model });
 
@@ -26,17 +63,24 @@ function buildOpenAIJsonClient({ apiKey, model }) {
       const inputChars = system.length + user.length;
       const start = performance.now();
       const res = await client.chat.completions.create({
-        model,
-        temperature: 0.1,
-        response_format: { type: 'json_object' },
-        max_tokens: callOptions.maxTokens,
+        ...openAiRequestOptions(model, callOptions),
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user },
         ],
       });
-      const text = res.choices[0]?.message?.content ?? '{}';
+      const choice = res.choices[0];
+      const text = choice?.message?.content?.trim() ?? '';
       const usage = res.usage ?? {};
+      const reasoningTokens = usage.completion_tokens_details?.reasoning_tokens ?? 0;
+      const finish = choice?.finish_reason ?? 'unknown';
+
+      if (!text) {
+        throw new Error(
+          `No JSON object found (empty content; finish_reason=${finish}; reasoning_tokens=${reasoningTokens})`
+        );
+      }
+
       recordLlmMetric({
         stage: callOptions.stage ?? 'unknown',
         call_id: callOptions.callId ?? null,
@@ -80,13 +124,15 @@ function createOpenAIProvider() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+  const model = getSelectedOpenAIModelId();
+  const meta = getSelectedOpenAIModelMeta();
   const client = buildOpenAIJsonClient({ apiKey, model });
 
   return {
     name: 'openai',
     model,
-    modelLabel: model,
+    modelLabel: meta.label,
+    modelTier: meta.tier,
     completeJson: client.completeJson,
   };
 }
@@ -115,7 +161,7 @@ export const LLM_STEP_MAX_TOKENS = {
   transcript: 500,
   patterns: 320,
   tests: 800,
-  recommend: 900,
+  recommend: 4000,
 };
 
 export function resolveTranscriptConcurrency(providerName) {
@@ -139,12 +185,20 @@ export async function llmJson(provider, system, user, callOptions = {}) {
   try {
     return await run();
   } catch (err) {
-    const isJsonError = /json|parse|valid|','|'\]'/i.test(err.message);
+    const hitLengthLimit = /finish_reason=length|empty content/i.test(err.message);
+    const isJsonError = /json|parse|valid|No JSON object found/i.test(err.message);
+
+    if (hitLengthLimit && usesMaxCompletionTokens(provider.model)) {
+      console.warn(`[llm] Length retry (${callOptions.stage ?? 'unknown'}): ${err.message}`);
+      try {
+        return await run({ reasoningEffort: 'none' });
+      } catch (retryErr) {
+        throw new Error(`${provider.modelLabel || provider.name} failed: ${retryErr.message}`);
+      }
+    }
+
     if (isJsonError) {
-      const bumped =
-        callOptions.maxTokens != null
-          ? Math.min(2048, Math.ceil(callOptions.maxTokens * 1.5))
-          : undefined;
+      const bumped = callOptions.maxTokens != null ? Math.ceil(callOptions.maxTokens * 1.5) : undefined;
       console.warn(
         `[llm] JSON retry (${callOptions.stage ?? 'unknown'}${bumped ? `, maxTokens→${bumped}` : ''}): ${err.message}`
       );
@@ -154,6 +208,7 @@ export async function llmJson(provider, system, user, callOptions = {}) {
         throw new Error(`${provider.modelLabel || provider.name} failed: ${retryErr.message}`);
       }
     }
+
     throw new Error(`${provider.modelLabel || provider.name} failed: ${err.message}`);
   }
 }

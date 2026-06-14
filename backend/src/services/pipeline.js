@@ -5,7 +5,7 @@ import { analyzeAllTranscripts } from './transcriptAnalyzer.js';
 import { detectPatterns } from './patternDetection.js';
 import { generateTestCases } from './tests.js';
 import { generateRecommendations } from './recommend.js';
-import { buildOptimizedAgentConfig } from './applyRecommendations.js';
+import { buildOptimizedAgentConfig } from './applyModifications.js';
 import {
   setEvaluationCriteria,
   setAnalyses,
@@ -62,7 +62,10 @@ export async function runFullPipeline(provider, agentConfig, transcripts) {
 
     const agentWithScript = {
       ...agentConfig,
-      _script: agentConfig._script ?? extractScriptFromPrompt(agentConfig.prompt),
+      _script:
+        agentConfig._script ??
+        agentConfig.callScript ??
+        extractScriptFromPrompt(agentConfig.prompt),
     };
 
     const goalsStart = performance.now();
@@ -133,10 +136,10 @@ export async function runFullPipeline(provider, agentConfig, transcripts) {
       'Generating optimization recommendations…',
       () => generateRecommendations(provider, agentWithScript, patterns, testCases)
     );
-    setRecommendations(recommendations);
     completed += 1;
 
     const optimizedAgent = buildOptimizedAgentConfig(agentWithScript, recommendations);
+    setRecommendations(recommendations);
     logStep('optimized_agent', optimizedAgent);
     setOptimizedAgent(optimizedAgent);
 
